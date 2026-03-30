@@ -16,14 +16,14 @@ interface Session {
   project_title?: string;
   status: string;
   created_at: string;
-  duration_seconds: number | null;
-  overall_score: number | null;
+  started_at: string | null;
+  ended_at: string | null;
 }
 
 const statusVariant: Record<string, BadgeVariant> = {
   pending: "default",
   active: "success",
-  completed: "success",
+  completed: "info",
   expired: "warning",
   error: "error",
 };
@@ -37,10 +37,13 @@ const STATUS_OPTIONS = [
   { value: "error", label: "Error" },
 ];
 
-function formatDuration(seconds: number | null): string {
-  if (seconds === null) return "—";
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
+function formatDuration(startedAt: string | null, endedAt: string | null): string {
+  if (!startedAt || !endedAt) return "—";
+  const ms = new Date(endedAt).getTime() - new Date(startedAt).getTime();
+  if (ms < 0) return "—";
+  const totalSecs = Math.floor(ms / 1000);
+  const mins = Math.floor(totalSecs / 60);
+  const secs = totalSecs % 60;
   return `${mins}m ${secs}s`;
 }
 
@@ -59,6 +62,7 @@ export default function SessionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [scores, setScores] = useState<Record<string, number | null>>({});
   const router = useRouter();
 
   useEffect(() => {
@@ -70,6 +74,26 @@ export default function SessionsPage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [statusFilter]);
+
+  // Fetch scores for completed sessions
+  useEffect(() => {
+    const completed = sessions.filter((s) => s.status === "completed");
+    if (completed.length === 0) return;
+
+    completed.forEach((s) => {
+      if (scores[s.id] !== undefined) return;
+      api
+        .get(`/api/sessions/${s.id}/scores`)
+        .then((data) => {
+          const list = Array.isArray(data) ? data : [];
+          const ai = list.find((sc: { score_type: string }) => sc.score_type === "ai");
+          setScores((prev) => ({ ...prev, [s.id]: ai?.overall_score ?? null }));
+        })
+        .catch(() => {
+          setScores((prev) => ({ ...prev, [s.id]: null }));
+        });
+    });
+  }, [sessions]);
 
   if (loading) {
     return (
@@ -129,9 +153,9 @@ export default function SessionsPage() {
               <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-muted mt-2">
                 <span>{session.project_title || session.project_id}</span>
                 <span>{formatDate(session.created_at)}</span>
-                <span>{formatDuration(session.duration_seconds)}</span>
-                {session.overall_score !== null && (
-                  <span className="text-ink">{session.overall_score}%</span>
+                <span>{formatDuration(session.started_at, session.ended_at)}</span>
+                {scores[session.id] != null && (
+                  <span className="text-ink">{scores[session.id]!.toFixed(1)}/10</span>
                 )}
               </div>
             </div>
@@ -186,10 +210,10 @@ export default function SessionsPage() {
                     {formatDate(session.created_at)}
                   </td>
                   <td className="py-4 pr-4 font-mono text-sm">
-                    {formatDuration(session.duration_seconds)}
+                    {formatDuration(session.started_at, session.ended_at)}
                   </td>
                   <td className="py-4 font-mono text-sm">
-                    {session.overall_score !== null ? `${session.overall_score}%` : "—"}
+                    {scores[session.id] != null ? `${scores[session.id]!.toFixed(1)}/10` : "—"}
                   </td>
                 </tr>
               ))}

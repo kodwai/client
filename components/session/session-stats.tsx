@@ -6,6 +6,7 @@ import { Badge, type BadgeVariant } from "@/components/ui/badge";
 interface SessionStatsProps {
   session: {
     started_at: string | null;
+    ended_at?: string | null;
     time_limit_minutes: number | null;
     status: string;
   };
@@ -16,7 +17,7 @@ interface SessionStatsProps {
 const statusVariant: Record<string, BadgeVariant> = {
   pending: "default",
   active: "success",
-  completed: "success",
+  completed: "info",
   expired: "warning",
   error: "error",
 };
@@ -35,9 +36,18 @@ export function SessionStats({ session, eventCount, fileCount }: SessionStatsPro
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    if (!session.started_at || session.status !== "active") return;
+    if (!session.started_at) return;
 
     const start = new Date(session.started_at).getTime();
+
+    // For completed sessions, compute final elapsed from ended_at
+    if (session.status !== "active") {
+      if (session.ended_at) {
+        const end = new Date(session.ended_at).getTime();
+        setElapsed(Math.floor((end - start) / 1000));
+      }
+      return;
+    }
 
     function tick() {
       const now = Date.now();
@@ -47,7 +57,7 @@ export function SessionStats({ session, eventCount, fileCount }: SessionStatsPro
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [session.started_at, session.status]);
+  }, [session.started_at, session.ended_at, session.status]);
 
   const totalSeconds = (session.time_limit_minutes || 0) * 60;
   const remaining = Math.max(0, totalSeconds - elapsed);

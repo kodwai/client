@@ -10,6 +10,7 @@ import { Badge, BadgeVariant } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Divider } from "@/components/ui/divider";
+import { Modal } from "@/components/ui/modal";
 
 interface RubricDimension {
   name: string;
@@ -39,8 +40,8 @@ interface Session {
   candidate_email: string;
   status: string;
   created_at: string;
-  duration_seconds: number | null;
-  overall_score: number | null;
+  started_at: string | null;
+  ended_at: string | null;
 }
 
 interface ApiKey {
@@ -57,7 +58,7 @@ const difficultyVariant: Record<string, BadgeVariant> = {
 const sessionStatusVariant: Record<string, BadgeVariant> = {
   pending: "default",
   active: "success",
-  completed: "success",
+  completed: "info",
   expired: "warning",
   error: "error",
 };
@@ -75,6 +76,13 @@ export default function ProjectDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("overview");
+
+  const [scores, setScores] = useState<Record<string, number | null>>({});
+  const [sortByScore, setSortByScore] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+  const [archiving, setArchiving] = useState(false);
 
   // Session creation form
   const [showSessionForm, setShowSessionForm] = useState(false);
@@ -107,8 +115,46 @@ export default function ProjectDetailPage() {
     }
   }, [showSessionForm, apiKeys.length]);
 
+  // Fetch scores for completed sessions
+  useEffect(() => {
+    const completed = sessions.filter((s) => s.status === "completed");
+    if (completed.length === 0) return;
+    completed.forEach((s) => {
+      if (scores[s.id] !== undefined) return;
+      api
+        .get(`/api/sessions/${s.id}/scores`)
+        .then((data) => {
+          const list = Array.isArray(data) ? data : [];
+          const ai = list.find((sc: { score_type: string }) => sc.score_type === "ai");
+          setScores((prev) => ({ ...prev, [s.id]: ai?.overall_score ?? null }));
+        })
+        .catch(() => {
+          setScores((prev) => ({ ...prev, [s.id]: null }));
+        });
+    });
+  }, [sessions]);
+
+  function formatDuration(startedAt: string | null, endedAt: string | null): string {
+    if (!startedAt || !endedAt) return "—";
+    const ms = new Date(endedAt).getTime() - new Date(startedAt).getTime();
+    if (ms < 0) return "—";
+    const totalSecs = Math.floor(ms / 1000);
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
+    return `${mins}m ${secs}s`;
+  }
+
+  const sortedSessions = sortByScore
+    ? [...sessions].sort((a, b) => {
+        const sa = scores[a.id] ?? -1;
+        const sb = scores[b.id] ?? -1;
+        return sb - sa;
+      })
+    : sessions;
+
   async function handleDuplicate() {
     if (!project) return;
+    setDuplicating(true);
     try {
       const payload = {
         title: `${project.title} (Copy)`,
@@ -125,16 +171,22 @@ export default function ProjectDetailPage() {
       router.push(`/projects/${dup.id}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to duplicate.");
+    } finally {
+      setDuplicating(false);
+      setShowDuplicateModal(false);
     }
   }
 
   async function handleArchive() {
     if (!project) return;
+    setArchiving(true);
     try {
       await api.delete(`/api/projects/${projectId}`);
       router.push("/projects");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to archive.");
+      setArchiving(false);
+      setShowArchiveModal(false);
     }
   }
 
@@ -210,10 +262,10 @@ export default function ProjectDetailPage() {
           <Link href={`/projects/${projectId}/edit`}>
             <Button variant="secondary">Edit</Button>
           </Link>
-          <Button variant="secondary" onClick={handleDuplicate}>
+          <Button variant="secondary" onClick={() => setShowDuplicateModal(true)}>
             Duplicate
           </Button>
-          <Button variant="secondary" onClick={handleArchive}>
+          <Button variant="secondary" onClick={() => setShowArchiveModal(true)}>
             Archive
           </Button>
         </div>
@@ -313,9 +365,19 @@ export default function ProjectDetailPage() {
       {activeTab === "sessions" && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <span className="font-mono text-xs text-muted uppercase tracking-widest">
-              {sessions.length} session{sessions.length !== 1 ? "s" : ""}
-            </span>
+            <div className="flex items-center gap-4">
+              <span className="font-mono text-xs text-muted uppercase tracking-widest">
+                {sessions.length} session{sessions.length !== 1 ? "s" : ""}
+              </span>
+              <button
+                onClick={() => setSortByScore(!sortByScore)}
+                className={`font-mono text-xs uppercase tracking-widest transition-colors ${
+                  sortByScore ? "text-rust" : "text-muted hover:text-ink"
+                }`}
+              >
+                {sortByScore ? "Sorted by Score" : "Sort by Score"}
+              </button>
+            </div>
             <Button onClick={() => setShowSessionForm(!showSessionForm)}>
               {showSessionForm ? "Cancel" : "New Session"}
             </Button>
@@ -362,7 +424,7 @@ export default function ProjectDetailPage() {
             </Card>
           ) : (
             <div className="space-y-3">
-              {sessions.map((session) => (
+              {sortedSessions.map((session) => (
                 <Card
                   key={session.id}
                   className="cursor-pointer hover:border-rust transition-colors"
@@ -376,8 +438,11 @@ export default function ProjectDetailPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
-                      {session.overall_score !== null && (
-                        <span className="font-mono text-sm">{session.overall_score}%</span>
+                      <span className="font-mono text-xs text-muted">
+                        {formatDuration(session.started_at, session.ended_at)}
+                      </span>
+                      {scores[session.id] != null && (
+                        <span className="font-mono text-sm">{scores[session.id]!.toFixed(1)}/10</span>
                       )}
                       <Badge variant={sessionStatusVariant[session.status] || "default"}>
                         {session.status}
@@ -390,6 +455,25 @@ export default function ProjectDetailPage() {
           )}
         </div>
       )}
+      <Modal
+        open={showDuplicateModal}
+        onClose={() => setShowDuplicateModal(false)}
+        title="Duplicate Project"
+        description={`This will create a copy of "${project.title}" with all its settings and rubric.`}
+        confirmLabel="Duplicate"
+        onConfirm={handleDuplicate}
+        loading={duplicating}
+      />
+
+      <Modal
+        open={showArchiveModal}
+        onClose={() => setShowArchiveModal(false)}
+        title="Archive Project"
+        description="This will archive the project and all its sessions. This action cannot be undone."
+        confirmLabel="Archive"
+        onConfirm={handleArchive}
+        loading={archiving}
+      />
     </div>
   );
 }

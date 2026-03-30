@@ -33,7 +33,7 @@ interface Session {
 const statusVariant: Record<string, BadgeVariant> = {
   pending: "default",
   active: "success",
-  completed: "success",
+  completed: "info",
   expired: "warning",
   error: "error",
 };
@@ -64,6 +64,7 @@ export default function SessionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [aiScore, setAiScore] = useState<number | null>(null);
 
   const isLive = session?.status === "active";
   const isCompleted = session?.status === "completed";
@@ -74,6 +75,19 @@ export default function SessionDetailPage() {
     showDashboard ? sessionId : null,
     isLive ? 3000 : 0,
   );
+
+  // Fetch AI score for completed sessions
+  useEffect(() => {
+    if (!isCompleted) return;
+    api
+      .get(`/api/sessions/${sessionId}/scores`)
+      .then((data) => {
+        const list = Array.isArray(data) ? data : [];
+        const ai = list.find((s: { score_type: string }) => s.score_type === "ai");
+        if (ai?.overall_score != null) setAiScore(ai.overall_score);
+      })
+      .catch(() => {});
+  }, [sessionId, isCompleted]);
 
   // Load session (also poll for active to detect status changes)
   useEffect(() => {
@@ -150,15 +164,14 @@ export default function SessionDetailPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {isLive && (
-            <span className="inline-flex items-center gap-1.5 font-mono text-[10px] text-green-700 uppercase tracking-widest">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-              Active
-            </span>
-          )}
-          <Badge variant={statusVariant[session.status] || "default"}>
+          <span className={`inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest ${
+            isLive ? "text-green-700" : session.status === "completed" ? "text-blue-700" : "text-muted"
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              isLive ? "bg-green-500 animate-pulse" : session.status === "completed" ? "bg-blue-500" : session.status === "expired" ? "bg-amber-500" : session.status === "error" ? "bg-rust" : "bg-muted"
+            }`} />
             {session.status}
-          </Badge>
+          </span>
         </div>
       </div>
       <Divider className="mx-0 my-8" />
@@ -227,43 +240,8 @@ export default function SessionDetailPage() {
       {/* Active / Completed: live dashboard */}
       {showDashboard && (
         <div className="space-y-6">
-          {/* Stats bar */}
-          <SessionStats
-            session={{
-              started_at: session.started_at,
-              time_limit_minutes: session.time_limit_minutes,
-              status: session.status,
-            }}
-            eventCount={events.length}
-            fileCount={fileCount}
-          />
-
-          {/* Vertically stacked sections */}
-          <div className="space-y-6">
-            <Card>
-              <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-3">
-                Live Transcript
-              </label>
-              <LiveTranscript events={events} />
-            </Card>
-
-            <Card>
-              <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-3">
-                File Changes
-              </label>
-              <FileExplorer events={events} />
-            </Card>
-
-            <Card>
-              <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-3">
-                Tool Usage
-              </label>
-              <ToolFeed events={events} />
-            </Card>
-          </div>
-
-          {/* Session details for completed */}
-          {isCompleted && (
+          {/* Session summary at top for completed, stats bar for active */}
+          {isCompleted ? (
             <Card accent>
               <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-4">
                 Session Summary
@@ -318,10 +296,10 @@ export default function SessionDetailPage() {
                 </div>
                 <div>
                   <span className="block font-mono text-xs text-muted uppercase tracking-widest">
-                    Files Changed
+                    Score
                   </span>
                   <span className="font-display text-base">
-                    {fileCount}
+                    {aiScore != null ? `${aiScore.toFixed(1)}/10` : "\u2014"}
                   </span>
                 </div>
               </div>
@@ -334,7 +312,43 @@ export default function SessionDetailPage() {
                 </Link>
               </div>
             </Card>
+          ) : (
+            <SessionStats
+              session={{
+                started_at: session.started_at,
+                ended_at: session.ended_at,
+                time_limit_minutes: session.time_limit_minutes,
+                status: session.status,
+              }}
+              eventCount={events.length}
+              fileCount={fileCount}
+            />
           )}
+
+          {/* Vertically stacked sections */}
+          <div className="space-y-6">
+            <Card>
+              <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-3">
+                Live Transcript
+              </label>
+              <LiveTranscript events={events} />
+            </Card>
+
+            <Card>
+              <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-3">
+                File Changes
+              </label>
+              <FileExplorer events={events} />
+            </Card>
+
+            <Card>
+              <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-3">
+                Tool Usage
+              </label>
+              <ToolFeed events={events} />
+            </Card>
+          </div>
+
         </div>
       )}
     </div>

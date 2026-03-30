@@ -102,7 +102,7 @@ export default function DashboardPage() {
                     <span className="font-mono text-xs text-muted">
                       {new Date(session.created_at).toLocaleDateString()}
                     </span>
-                    <Badge variant={session.status === "active" ? "success" : session.status === "completed" ? "success" : "default"}>
+                    <Badge variant={session.status === "active" ? "success" : session.status === "completed" ? "info" : "default"}>
                       {session.status}
                     </Badge>
                   </div>
