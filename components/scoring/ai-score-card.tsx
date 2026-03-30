@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -36,12 +33,6 @@ function barColor(score: number): string {
 }
 
 function AiScoreCard({ score }: AiScoreCardProps) {
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-
-  function toggleDimension(name: string) {
-    setExpanded((prev) => ({ ...prev, [name]: !prev[name] }));
-  }
-
   return (
     <Card accent>
       {/* Header */}
@@ -71,27 +62,21 @@ function AiScoreCard({ score }: AiScoreCardProps) {
         <div className="space-y-3">
           {score.dimensions.map((dim) => (
             <div key={dim.name}>
-              <button
-                type="button"
-                className="w-full text-left"
-                onClick={() => dim.justification && toggleDimension(dim.name)}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-mono text-xs uppercase tracking-widest text-ink">
-                    {dim.name}
-                  </span>
-                  <span className={`font-display text-sm ${scoreColor(dim.score)}`}>
-                    {dim.score.toFixed(1)}
-                  </span>
-                </div>
-                <div className="w-full h-1.5 bg-cream-dark rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all ${barColor(dim.score)}`}
-                    style={{ width: `${(dim.score / 10) * 100}%` }}
-                  />
-                </div>
-              </button>
-              {dim.justification && expanded[dim.name] && (
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-mono text-xs uppercase tracking-widest text-ink">
+                  {dim.name}
+                </span>
+                <span className={`font-display text-sm ${scoreColor(dim.score)}`}>
+                  {dim.score.toFixed(1)}
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-cream-dark rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${barColor(dim.score)}`}
+                  style={{ width: `${(dim.score / 10) * 100}%` }}
+                />
+              </div>
+              {dim.justification && (
                 <p className="mt-2 ml-1 text-xs text-muted leading-relaxed border-l-2 border-border pl-3">
                   {dim.justification}
                 </p>
