@@ -78,8 +78,8 @@ export default function ApiKeysPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="font-display text-3xl">API Keys</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
+        <h1 className="font-display text-2xl sm:text-3xl">API Keys</h1>
         <Button
           variant="secondary"
           onClick={() => setShowForm(!showForm)}
@@ -133,8 +133,8 @@ export default function ApiKeysPage() {
       ) : (
         <div className="space-y-3">
           {keys.map((k) => (
-            <Card key={k.id} className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
+            <Card key={k.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
                 <div>
                   <p className="font-display text-lg">{k.label}</p>
                   <p className="font-mono text-sm text-muted mt-0.5">

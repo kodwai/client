@@ -1,12 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
+import { useSessionEvents, type SessionEvent } from "@/hooks/use-session-events";
 import { Card } from "@/components/ui/card";
 import { Badge, BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
+import { SessionStats } from "@/components/session/session-stats";
+import { LiveTranscript } from "@/components/session/live-transcript";
+import { FileExplorer } from "@/components/session/file-explorer";
+import { ToolFeed } from "@/components/session/tool-feed";
 
 interface Session {
   id: string;
@@ -15,6 +20,7 @@ interface Session {
   project_id: string;
   project_title?: string;
   status: string;
+  session_token?: string;
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
@@ -32,7 +38,7 @@ const statusVariant: Record<string, BadgeVariant> = {
 };
 
 function formatDate(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "\u2014";
   return new Date(iso).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -43,7 +49,7 @@ function formatDate(iso: string | null): string {
 }
 
 function formatDuration(seconds: number | null): string {
-  if (seconds === null) return "—";
+  if (seconds === null) return "\u2014";
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins}m ${secs}s`;
@@ -58,16 +64,54 @@ export default function SessionDetailPage() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
+  const isLive = session?.status === "active";
+  const isCompleted = session?.status === "completed";
+  const showDashboard = isLive || isCompleted;
+
+  // Poll events every 3s for active sessions, load once for completed
+  const { events } = useSessionEvents(
+    showDashboard ? sessionId : null,
+    isLive ? 3000 : 0,
+  );
+
+  // Load session (also poll for active to detect status changes)
   useEffect(() => {
     api
       .get(`/api/sessions/${sessionId}`)
       .then((data) => setSession(data))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [sessionId]);
+
+    if (!isLive) return;
+    const interval = setInterval(() => {
+      api.get(`/api/sessions/${sessionId}`).then((data) => setSession(data)).catch(() => {});
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [sessionId, isLive]);
+
+  // Derived counts for stats
+  const fileCount = useMemo(
+    () =>
+      new Set(
+        events
+          .filter(
+            (e) =>
+              e.type === "file.change" ||
+              e.type === "file_change" ||
+              e.type === "file.write" ||
+              e.type === "file.create"
+          )
+          .map(
+            (e) =>
+              (e.data.file_path as string) || (e.data.path as string) || ""
+          )
+          .filter(Boolean)
+      ).size,
+    [events]
+  );
 
   function copyCommand() {
-    const command = `npx kodwai start ${sessionId}`;
+    const command = `npx kodwai start ${sessionId} --token ${session?.session_token || ""}`;
     navigator.clipboard.writeText(command).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -77,7 +121,9 @@ export default function SessionDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="font-mono text-sm text-muted uppercase tracking-widest">Loading...</p>
+        <p className="font-mono text-sm text-muted uppercase tracking-widest">
+          Loading...
+        </p>
       </div>
     );
   }
@@ -94,117 +140,181 @@ export default function SessionDetailPage() {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-2">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
         <div>
-          <h1 className="font-display text-3xl">{session.candidate_name}</h1>
-          <p className="font-mono text-sm text-muted mt-1">{session.candidate_email}</p>
+          <h1 className="font-display text-2xl sm:text-3xl">{session.candidate_name}</h1>
+          <p className="font-mono text-sm text-muted mt-1">
+            {session.candidate_email}
+          </p>
         </div>
-        <Badge variant={statusVariant[session.status] || "default"}>
-          {session.status}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {isLive && (
+            <span className="inline-flex items-center gap-1.5 font-mono text-[10px] text-green-700 uppercase tracking-widest">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              Active
+            </span>
+          )}
+          <Badge variant={statusVariant[session.status] || "default"}>
+            {session.status}
+          </Badge>
+        </div>
       </div>
       <Divider className="mx-0 my-8" />
 
-      {error && <p className="font-mono text-xs text-rust mb-4">{error}</p>}
+      {error && (
+        <p className="font-mono text-xs text-rust mb-4">{error}</p>
+      )}
 
-      <div className="space-y-6 max-w-3xl">
-        {/* Session Details */}
-        <Card accent>
-          <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-4">
-            Session Details
-          </label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6">
-            <div>
-              <span className="block font-mono text-xs text-muted uppercase tracking-widest">
-                Project
-              </span>
-              <span className="font-display text-base">
-                {session.project_title || session.project_id}
-              </span>
+      {/* Pending: show CLI command + session details */}
+      {session.status === "pending" && (
+        <div className="space-y-6 max-w-3xl">
+          <Card accent>
+            <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-4">
+              Session Details
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6">
+              <div>
+                <span className="block font-mono text-xs text-muted uppercase tracking-widest">
+                  Project
+                </span>
+                <span className="font-display text-base">
+                  {session.project_title || session.project_id}
+                </span>
+              </div>
+              <div>
+                <span className="block font-mono text-xs text-muted uppercase tracking-widest">
+                  Created
+                </span>
+                <span className="font-display text-base">
+                  {formatDate(session.created_at)}
+                </span>
+              </div>
+              <div>
+                <span className="block font-mono text-xs text-muted uppercase tracking-widest">
+                  Time Limit
+                </span>
+                <span className="font-display text-base">
+                  {session.time_limit_minutes
+                    ? `${session.time_limit_minutes} min`
+                    : "\u2014"}
+                </span>
+              </div>
             </div>
-            <div>
-              <span className="block font-mono text-xs text-muted uppercase tracking-widest">
-                Created
-              </span>
-              <span className="font-display text-base">{formatDate(session.created_at)}</span>
-            </div>
-            <div>
-              <span className="block font-mono text-xs text-muted uppercase tracking-widest">
-                Started
-              </span>
-              <span className="font-display text-base">{formatDate(session.started_at)}</span>
-            </div>
-            <div>
-              <span className="block font-mono text-xs text-muted uppercase tracking-widest">
-                Completed
-              </span>
-              <span className="font-display text-base">{formatDate(session.completed_at)}</span>
-            </div>
-            <div>
-              <span className="block font-mono text-xs text-muted uppercase tracking-widest">
-                Duration
-              </span>
-              <span className="font-display text-base">
-                {formatDuration(session.duration_seconds)}
-              </span>
-            </div>
-            <div>
-              <span className="block font-mono text-xs text-muted uppercase tracking-widest">
-                Score
-              </span>
-              <span className="font-display text-base">
-                {session.overall_score !== null ? `${session.overall_score}%` : "—"}
-              </span>
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        {/* CLI Command for pending sessions */}
-        {session.status === "pending" && (
           <Card>
             <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-3">
               Start Session
             </label>
             <p className="text-sm text-muted mb-4">
-              Share this command with the candidate to start the interview session:
+              Share this command with the candidate to start the interview
+              session:
             </p>
-            <div className="flex items-center gap-3">
-              <code className="flex-1 bg-cream-dark border border-border px-4 py-3 font-mono text-sm text-ink">
-                npx kodwai start {sessionId}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <code className="flex-1 bg-cream-dark border border-border px-3 sm:px-4 py-3 font-mono text-xs sm:text-sm text-ink break-all">
+                npx kodwai start {sessionId} --token {session?.session_token}
               </code>
               <Button variant="secondary" onClick={copyCommand}>
                 {copied ? "Copied!" : "Copy"}
               </Button>
             </div>
           </Card>
-        )}
+        </div>
+      )}
 
-        {/* Live Transcript Placeholder */}
-        <Card>
-          <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-3">
-            Live Transcript
-          </label>
-          <div className="py-8 text-center">
-            <p className="font-mono text-sm text-muted">
-              Live transcript will be available in a future update.
-            </p>
-            <p className="font-mono text-xs text-muted/60 mt-2">Coming in Sprint 4-5</p>
-          </div>
-        </Card>
+      {/* Active / Completed: live dashboard */}
+      {showDashboard && (
+        <div className="space-y-6">
+          {/* Stats bar */}
+          <SessionStats
+            session={{
+              started_at: session.started_at,
+              time_limit_minutes: session.time_limit_minutes,
+              status: session.status,
+            }}
+            eventCount={events.length}
+            fileCount={fileCount}
+          />
 
-        {/* Score Placeholder */}
-        <Card>
-          <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-3">
-            Score Breakdown
-          </label>
-          <div className="py-8 text-center">
-            <p className="font-mono text-sm text-muted">
-              Detailed scoring will be available in a future update.
-            </p>
-            <p className="font-mono text-xs text-muted/60 mt-2">Coming in Sprint 4-5</p>
+          {/* Vertically stacked sections */}
+          <div className="space-y-6">
+            <Card>
+              <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-3">
+                Live Transcript
+              </label>
+              <LiveTranscript events={events} />
+            </Card>
+
+            <Card>
+              <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-3">
+                File Changes
+              </label>
+              <FileExplorer events={events} />
+            </Card>
+
+            <Card>
+              <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-3">
+                Tool Usage
+              </label>
+              <ToolFeed events={events} />
+            </Card>
           </div>
-        </Card>
-      </div>
+
+          {/* Session details for completed */}
+          {isCompleted && (
+            <Card accent>
+              <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-4">
+                Session Summary
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6">
+                <div>
+                  <span className="block font-mono text-xs text-muted uppercase tracking-widest">
+                    Project
+                  </span>
+                  <span className="font-display text-base">
+                    {session.project_title || session.project_id}
+                  </span>
+                </div>
+                <div>
+                  <span className="block font-mono text-xs text-muted uppercase tracking-widest">
+                    Started
+                  </span>
+                  <span className="font-display text-base">
+                    {formatDate(session.started_at)}
+                  </span>
+                </div>
+                <div>
+                  <span className="block font-mono text-xs text-muted uppercase tracking-widest">
+                    Completed
+                  </span>
+                  <span className="font-display text-base">
+                    {formatDate(session.completed_at)}
+                  </span>
+                </div>
+                <div>
+                  <span className="block font-mono text-xs text-muted uppercase tracking-widest">
+                    Duration
+                  </span>
+                  <span className="font-display text-base">
+                    {formatDuration(session.duration_seconds)}
+                  </span>
+                </div>
+                <div>
+                  <span className="block font-mono text-xs text-muted uppercase tracking-widest">
+                    Score
+                  </span>
+                  <span className="font-display text-base">
+                    {session.overall_score !== null
+                      ? `${session.overall_score}%`
+                      : "\u2014"}
+                  </span>
+                </div>
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
     </div>
   );
 }

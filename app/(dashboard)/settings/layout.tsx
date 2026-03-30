@@ -14,7 +14,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="max-w-4xl">
-      <nav className="flex gap-6 border-b border-border mb-8">
+      <nav className="flex gap-4 sm:gap-6 border-b border-border mb-6 sm:mb-8 overflow-x-auto">
         {tabs.map((tab) => {
           const isActive =
             tab.href === "/settings"

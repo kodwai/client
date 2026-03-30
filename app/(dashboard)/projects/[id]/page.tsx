@@ -193,10 +193,10 @@ export default function ProjectDetailPage() {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-2">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-2">
         <div>
-          <h1 className="font-display text-3xl">{project.title}</h1>
-          <div className="flex items-center gap-3 mt-2">
+          <h1 className="font-display text-2xl sm:text-3xl">{project.title}</h1>
+          <div className="flex items-center gap-3 mt-2 flex-wrap">
             <Badge variant={difficultyVariant[project.difficulty] || "default"}>
               {project.difficulty}
             </Badge>
@@ -206,7 +206,7 @@ export default function ProjectDetailPage() {
             )}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Link href={`/projects/${projectId}/edit`}>
             <Button variant="secondary">Edit</Button>
           </Link>
@@ -223,7 +223,7 @@ export default function ProjectDetailPage() {
       {error && <p className="font-mono text-xs text-rust mb-4">{error}</p>}
 
       {/* Tabs */}
-      <div className="flex gap-6 mb-8 border-b border-border">
+      <div className="flex gap-4 sm:gap-6 mb-8 border-b border-border overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.key}
@@ -368,7 +368,7 @@ export default function ProjectDetailPage() {
                   className="cursor-pointer hover:border-rust transition-colors"
                   onClick={() => router.push(`/sessions/${session.id}`)}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
                       <span className="font-display text-lg">{session.candidate_name}</span>
                       <span className="font-mono text-xs text-muted ml-3">

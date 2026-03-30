@@ -81,9 +81,9 @@ export default function SessionsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="font-display text-3xl">Sessions</h1>
-        <div className="w-48">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
+        <h1 className="font-display text-2xl sm:text-3xl">Sessions</h1>
+        <div className="w-full sm:w-48">
           <Select
             options={STATUS_OPTIONS}
             value={statusFilter}
@@ -108,7 +108,38 @@ export default function SessionsPage() {
           </p>
         </Card>
       ) : (
-        <div className="overflow-x-auto">
+        <>
+        {/* Mobile: card layout */}
+        <div className="md:hidden space-y-3">
+          {sessions.map((session) => (
+            <div
+              key={session.id}
+              onClick={() => router.push(`/sessions/${session.id}`)}
+              className="border border-border bg-white/50 p-4 cursor-pointer hover:border-rust transition-colors"
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div>
+                  <div className="font-display text-base">{session.candidate_name}</div>
+                  <div className="font-mono text-xs text-muted">{session.candidate_email}</div>
+                </div>
+                <Badge variant={statusVariant[session.status] || "default"}>
+                  {session.status}
+                </Badge>
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-muted mt-2">
+                <span>{session.project_title || session.project_id}</span>
+                <span>{formatDate(session.created_at)}</span>
+                <span>{formatDuration(session.duration_seconds)}</span>
+                {session.overall_score !== null && (
+                  <span className="text-ink">{session.overall_score}%</span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop: table layout */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border">
@@ -165,6 +196,7 @@ export default function SessionsPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );

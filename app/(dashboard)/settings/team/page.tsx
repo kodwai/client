@@ -103,8 +103,8 @@ export default function TeamPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="font-display text-3xl">Team Members</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
+        <h1 className="font-display text-2xl sm:text-3xl">Team Members</h1>
         <Button
           variant="secondary"
           onClick={() => setShowInvite(!showInvite)}
@@ -165,7 +165,48 @@ export default function TeamPage() {
           </p>
         </Card>
       ) : (
-        <div className="border border-border overflow-hidden">
+        <>
+        {/* Mobile: card layout */}
+        <div className="md:hidden space-y-3">
+          {members.map((member) => (
+            <div
+              key={member.id}
+              className="border border-border bg-white/50 p-4"
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div>
+                  <p className="font-mono text-sm text-ink">{member.name}</p>
+                  <p className="font-mono text-xs text-muted">{member.email}</p>
+                </div>
+                <Badge variant={roleBadgeVariant[member.role] || "default"}>
+                  {member.role}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+                <select
+                  value={member.role}
+                  onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                  className="bg-transparent font-mono text-xs uppercase tracking-widest text-ink outline-none cursor-pointer"
+                >
+                  {ROLES.map((role) => (
+                    <option key={role} value={role}>
+                      {role.charAt(0).toUpperCase() + role.slice(1)}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => handleRemove(member.id)}
+                  className="font-mono text-xs uppercase tracking-widest text-muted hover:text-rust transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop: table layout */}
+        <div className="hidden md:block border border-border overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="border-b border-border bg-white/50">
@@ -224,6 +265,7 @@ export default function TeamPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
     </div>
   );
