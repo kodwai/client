@@ -112,7 +112,7 @@ export default function SessionDetailPage() {
   );
 
   function copyCommand() {
-    const command = `npx kodwai start ${sessionId} --token ${session?.session_token || ""}`;
+    const command = `npx @kodwai/cli start ${sessionId} --token ${session?.session_token || ""}`;
     navigator.clipboard.writeText(command).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -214,7 +214,7 @@ export default function SessionDetailPage() {
             </p>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <code className="flex-1 bg-cream-dark border border-border px-3 sm:px-4 py-3 font-mono text-xs sm:text-sm text-ink break-all">
-                npx kodwai start {sessionId} --token {session?.session_token}
+                npx @kodwai/cli start {sessionId} --token {session?.session_token}
               </code>
               <Button variant="secondary" onClick={copyCommand}>
                 {copied ? "Copied!" : "Copy"}
