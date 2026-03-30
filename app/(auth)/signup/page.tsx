@@ -22,13 +22,14 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      await api.post("/api/auth/signup", {
+      const data = await api.post("/api/auth/signup", {
         name,
         email,
         password,
         organization_name: company,
       });
-      router.push("/verify");
+      localStorage.setItem("token", data.access_token);
+      router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Signup failed");
     } finally {
