@@ -20,18 +20,18 @@ interface FileNode {
 
 const FILE_ICONS: Record<string, { icon: string; color: string }> = {
   // JavaScript / TypeScript
-  ".js": { icon: "JS", color: "#f7df1e" },
-  ".jsx": { icon: "JSX", color: "#61dafb" },
+  ".js": { icon: "JS", color: "#b5a10d" },
+  ".jsx": { icon: "JSX", color: "#2da0c7" },
   ".ts": { icon: "TS", color: "#3178c6" },
   ".tsx": { icon: "TSX", color: "#3178c6" },
-  ".mjs": { icon: "MJ", color: "#f7df1e" },
-  ".cjs": { icon: "CJ", color: "#f7df1e" },
+  ".mjs": { icon: "MJ", color: "#b5a10d" },
+  ".cjs": { icon: "CJ", color: "#b5a10d" },
   // Web
   ".html": { icon: "H", color: "#e44d26" },
   ".css": { icon: "C", color: "#264de4" },
   ".scss": { icon: "S", color: "#cd6799" },
   ".less": { icon: "L", color: "#1d365d" },
-  ".svg": { icon: "SV", color: "#ffb13b" },
+  ".svg": { icon: "SV", color: "#c4850a" },
   // Python
   ".py": { icon: "PY", color: "#3776ab" },
   ".pyx": { icon: "PX", color: "#3776ab" },
@@ -53,21 +53,21 @@ const FILE_ICONS: Record<string, { icon: string; color: string }> = {
   // PHP
   ".php": { icon: "PH", color: "#4f5d95" },
   // Shell
-  ".sh": { icon: "SH", color: "#89e051" },
-  ".bash": { icon: "SH", color: "#89e051" },
-  ".zsh": { icon: "SH", color: "#89e051" },
+  ".sh": { icon: "SH", color: "#5a9e2f" },
+  ".bash": { icon: "SH", color: "#5a9e2f" },
+  ".zsh": { icon: "SH", color: "#5a9e2f" },
   // Config / Data
-  ".json": { icon: "{}", color: "#f7df1e" },
+  ".json": { icon: "{}", color: "#b5a10d" },
   ".yaml": { icon: "YA", color: "#cb171e" },
   ".yml": { icon: "YA", color: "#cb171e" },
   ".toml": { icon: "TM", color: "#9c4221" },
   ".xml": { icon: "XM", color: "#e44d26" },
-  ".env": { icon: "EN", color: "#ecd53f" },
-  ".ini": { icon: "IN", color: "#d1d5db" },
+  ".env": { icon: "EN", color: "#a89418" },
+  ".ini": { icon: "IN", color: "#8b8f96" },
   // Docs
   ".md": { icon: "MD", color: "#083fa1" },
   ".mdx": { icon: "MX", color: "#083fa1" },
-  ".txt": { icon: "TX", color: "#d1d5db" },
+  ".txt": { icon: "TX", color: "#8b8f96" },
   // Docker / DevOps
   ".dockerfile": { icon: "DK", color: "#2496ed" },
   // SQL
