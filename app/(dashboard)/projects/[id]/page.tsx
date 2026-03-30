@@ -131,7 +131,7 @@ export default function ProjectDetailPage() {
   async function handleArchive() {
     if (!project) return;
     try {
-      await api.put(`/api/projects/${projectId}`, { status: "archived" });
+      await api.delete(`/api/projects/${projectId}`);
       router.push("/projects");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to archive.");

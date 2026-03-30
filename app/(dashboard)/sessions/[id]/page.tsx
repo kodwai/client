@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { useSessionEvents, type SessionEvent } from "@/hooks/use-session-events";
 import { Card } from "@/components/ui/card";
@@ -23,9 +24,9 @@ interface Session {
   session_token?: string;
   created_at: string;
   started_at: string | null;
-  completed_at: string | null;
-  duration_seconds: number | null;
-  overall_score: number | null;
+  ended_at: string | null;
+  duration_ms: number | null;
+  total_cost_usd: number | null;
   time_limit_minutes: number | null;
 }
 
@@ -289,7 +290,7 @@ export default function SessionDetailPage() {
                     Completed
                   </span>
                   <span className="font-display text-base">
-                    {formatDate(session.completed_at)}
+                    {formatDate(session.ended_at)}
                   </span>
                 </div>
                 <div>
@@ -297,19 +298,40 @@ export default function SessionDetailPage() {
                     Duration
                   </span>
                   <span className="font-display text-base">
-                    {formatDuration(session.duration_seconds)}
+                    {session.started_at && session.ended_at
+                      ? (() => {
+                          const ms = new Date(session.ended_at).getTime() - new Date(session.started_at).getTime();
+                          const mins = Math.floor(ms / 60000);
+                          const secs = Math.floor((ms % 60000) / 1000);
+                          return `${mins}m ${secs}s`;
+                        })()
+                      : "\u2014"}
                   </span>
                 </div>
                 <div>
                   <span className="block font-mono text-xs text-muted uppercase tracking-widest">
-                    Score
+                    Events
                   </span>
                   <span className="font-display text-base">
-                    {session.overall_score !== null
-                      ? `${session.overall_score}%`
-                      : "\u2014"}
+                    {events.length}
                   </span>
                 </div>
+                <div>
+                  <span className="block font-mono text-xs text-muted uppercase tracking-widest">
+                    Files Changed
+                  </span>
+                  <span className="font-display text-base">
+                    {fileCount}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-6">
+                <Link
+                  href={`/sessions/${sessionId}/score`}
+                  className="inline-block px-6 py-3 bg-rust text-cream font-mono text-xs uppercase tracking-widest transition-colors hover:bg-rust-hover"
+                >
+                  View Scores
+                </Link>
               </div>
             </Card>
           )}

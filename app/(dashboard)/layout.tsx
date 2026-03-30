@@ -64,7 +64,10 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
       >
         <div className="p-6">
           <div className="flex items-center justify-between">
-            <h1 style={{ fontFamily: "var(--font-logo), Georgia, serif", fontWeight: 550, fontSize: 24, letterSpacing: "0.75px", color: "#353431" }}>kodwai</h1>
+            <div className="inline-block">
+              <h1 style={{ fontFamily: "var(--font-logo), Georgia, serif", fontWeight: 550, fontSize: 24, letterSpacing: "0.75px", color: "#353431" }}>kodwai</h1>
+              <div className="h-px bg-rust mt-2 w-full" />
+            </div>
             <button
               onClick={onClose}
               className="md:hidden p-1 text-ink/70 hover:text-ink transition-colors"
@@ -76,7 +79,6 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
               </svg>
             </button>
           </div>
-          <Divider className="mt-3 mx-0" />
         </div>
 
         <nav className="flex-1 px-4 space-y-1">
