@@ -22,6 +22,7 @@ export default function NewProjectPage() {
   const [problemStatement, setProblemStatement] = useState("");
   const [timeLimitMinutes, setTimeLimitMinutes] = useState(60);
   const [difficulty, setDifficulty] = useState("medium");
+  const [maxBudgetUsd, setMaxBudgetUsd] = useState<string>("");
   const [rubricDimensions, setRubricDimensions] = useState<RubricDimension[]>(DEFAULT_DIMENSIONS);
   const [allowedTools, setAllowedTools] = useState<string[] | null>(null);
   const [disallowedTools, setDisallowedTools] = useState<string[] | null>(null);
@@ -38,6 +39,7 @@ export default function NewProjectPage() {
         problem_statement_md: problemStatement,
         time_limit_minutes: timeLimitMinutes,
         difficulty,
+        max_budget_usd: maxBudgetUsd ? parseFloat(maxBudgetUsd) : null,
         rubric: rubricDimensions,
         allowed_tools: allowedTools,
         disallowed_tools: disallowedTools,
@@ -88,7 +90,7 @@ export default function NewProjectPage() {
               rows={8}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Input
                 label="Time Limit (minutes)"
                 type="number"
@@ -106,6 +108,16 @@ export default function NewProjectPage() {
                   { value: "medium", label: "Medium" },
                   { value: "hard", label: "Hard" },
                 ]}
+              />
+
+              <Input
+                label="Budget Limit (USD)"
+                type="number"
+                min={0}
+                step={0.5}
+                value={maxBudgetUsd}
+                onChange={(e) => setMaxBudgetUsd(e.target.value)}
+                placeholder="e.g. 5.00"
               />
             </div>
           </div>
