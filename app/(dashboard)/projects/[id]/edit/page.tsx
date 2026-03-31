@@ -92,7 +92,7 @@ export default function EditProjectPage() {
       </p>
       <Divider className="mx-0 my-8" />
 
-      <form onSubmit={handleSubmit} className="space-y-8 max-w-3xl">
+      <form onSubmit={handleSubmit} className="space-y-8">
         <Card accent>
           <div className="space-y-6">
             <Input

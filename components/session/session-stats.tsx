@@ -9,6 +9,8 @@ interface SessionStatsProps {
     ended_at?: string | null;
     time_limit_minutes: number | null;
     status: string;
+    total_cost_usd?: number | null;
+    max_budget_usd?: number | null;
   };
   eventCount: number;
   fileCount: number;
@@ -129,6 +131,25 @@ export function SessionStats({ session, eventCount, fileCount }: SessionStatsPro
         </span>
         <span className="font-mono text-sm text-ink">{fileCount}</span>
       </div>
+
+      {/* Cost */}
+      {session.total_cost_usd != null && session.total_cost_usd > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
+            Cost
+          </span>
+          <span className={`font-mono text-sm ${
+            session.max_budget_usd && session.total_cost_usd >= session.max_budget_usd * 0.8
+              ? "text-rust"
+              : "text-ink"
+          }`}>
+            ${session.total_cost_usd.toFixed(4)}
+            {session.max_budget_usd && (
+              <span className="text-muted"> / ${session.max_budget_usd.toFixed(2)}</span>
+            )}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

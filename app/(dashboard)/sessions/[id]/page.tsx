@@ -28,6 +28,7 @@ interface Session {
   duration_ms: number | null;
   total_cost_usd: number | null;
   time_limit_minutes: number | null;
+  overall_score: number | null;
 }
 
 const statusVariant: Record<string, BadgeVariant> = {
@@ -64,8 +65,6 @@ export default function SessionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
-  const [aiScore, setAiScore] = useState<number | null>(null);
-
   const isLive = session?.status === "active";
   const isCompleted = session?.status === "completed";
   const showDashboard = isLive || isCompleted;
@@ -75,19 +74,6 @@ export default function SessionDetailPage() {
     showDashboard ? sessionId : null,
     isLive ? 3000 : 0,
   );
-
-  // Fetch AI score for completed sessions
-  useEffect(() => {
-    if (!isCompleted) return;
-    api
-      .get(`/api/sessions/${sessionId}/scores`)
-      .then((data) => {
-        const list = Array.isArray(data) ? data : [];
-        const ai = list.find((s: { score_type: string }) => s.score_type === "ai");
-        if (ai?.overall_score != null) setAiScore(ai.overall_score);
-      })
-      .catch(() => {});
-  }, [sessionId, isCompleted]);
 
   // Load session (also poll for active to detect status changes)
   useEffect(() => {
@@ -182,7 +168,7 @@ export default function SessionDetailPage() {
 
       {/* Pending: show CLI command + session details */}
       {session.status === "pending" && (
-        <div className="space-y-6 max-w-3xl">
+        <div className="space-y-6">
           <Card accent>
             <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-4">
               Session Details
@@ -240,8 +226,24 @@ export default function SessionDetailPage() {
       {/* Active / Completed: live dashboard */}
       {showDashboard && (
         <div className="space-y-6">
-          {/* Session summary at top for completed, stats bar for active */}
-          {isCompleted ? (
+          {/* Stats bar for active sessions only */}
+          {isLive && (
+            <SessionStats
+              session={{
+                started_at: session.started_at,
+                ended_at: session.ended_at,
+                time_limit_minutes: session.time_limit_minutes,
+                status: session.status,
+                total_cost_usd: session.total_cost_usd,
+                max_budget_usd: null,
+              }}
+              eventCount={events.length}
+              fileCount={fileCount}
+            />
+          )}
+
+          {/* Session summary for completed */}
+          {isCompleted && (
             <Card accent>
               <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-4">
                 Session Summary
@@ -288,10 +290,10 @@ export default function SessionDetailPage() {
                 </div>
                 <div>
                   <span className="block font-mono text-xs text-muted uppercase tracking-widest">
-                    Events
+                    Spent
                   </span>
                   <span className="font-display text-base">
-                    {events.length}
+                    {session.total_cost_usd != null ? `$${session.total_cost_usd.toFixed(4)}` : "\u2014"}
                   </span>
                 </div>
                 <div>
@@ -299,7 +301,7 @@ export default function SessionDetailPage() {
                     Score
                   </span>
                   <span className="font-display text-base">
-                    {aiScore != null ? `${aiScore.toFixed(1)}/10` : "\u2014"}
+                    {session.overall_score != null ? `${session.overall_score.toFixed(1)}/10` : "\u2014"}
                   </span>
                 </div>
               </div>
@@ -312,17 +314,6 @@ export default function SessionDetailPage() {
                 </Link>
               </div>
             </Card>
-          ) : (
-            <SessionStats
-              session={{
-                started_at: session.started_at,
-                ended_at: session.ended_at,
-                time_limit_minutes: session.time_limit_minutes,
-                status: session.status,
-              }}
-              eventCount={events.length}
-              fileCount={fileCount}
-            />
           )}
 
           {/* Vertically stacked sections */}

@@ -64,7 +64,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="max-w-4xl">
+    <div>
       <h1 className="font-display text-2xl sm:text-4xl mb-2">
         Welcome{user?.name ? `, ${user.name}` : ""}
       </h1>

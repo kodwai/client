@@ -42,6 +42,7 @@ interface Session {
   created_at: string;
   started_at: string | null;
   ended_at: string | null;
+  overall_score: number | null;
 }
 
 interface ApiKey {
@@ -77,7 +78,6 @@ export default function ProjectDetailPage() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<Tab>("overview");
 
-  const [scores, setScores] = useState<Record<string, number | null>>({});
   const [sortByScore, setSortByScore] = useState(false);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
@@ -115,25 +115,6 @@ export default function ProjectDetailPage() {
     }
   }, [showSessionForm, apiKeys.length]);
 
-  // Fetch scores for completed sessions
-  useEffect(() => {
-    const completed = sessions.filter((s) => s.status === "completed");
-    if (completed.length === 0) return;
-    completed.forEach((s) => {
-      if (scores[s.id] !== undefined) return;
-      api
-        .get(`/api/sessions/${s.id}/scores`)
-        .then((data) => {
-          const list = Array.isArray(data) ? data : [];
-          const ai = list.find((sc: { score_type: string }) => sc.score_type === "ai");
-          setScores((prev) => ({ ...prev, [s.id]: ai?.overall_score ?? null }));
-        })
-        .catch(() => {
-          setScores((prev) => ({ ...prev, [s.id]: null }));
-        });
-    });
-  }, [sessions]);
-
   function formatDuration(startedAt: string | null, endedAt: string | null): string {
     if (!startedAt || !endedAt) return "—";
     const ms = new Date(endedAt).getTime() - new Date(startedAt).getTime();
@@ -146,8 +127,8 @@ export default function ProjectDetailPage() {
 
   const sortedSessions = sortByScore
     ? [...sessions].sort((a, b) => {
-        const sa = scores[a.id] ?? -1;
-        const sb = scores[b.id] ?? -1;
+        const sa = a.overall_score ?? -1;
+        const sb = b.overall_score ?? -1;
         return sb - sa;
       })
     : sessions;
@@ -293,7 +274,31 @@ export default function ProjectDetailPage() {
 
       {/* Overview Tab */}
       {activeTab === "overview" && (
-        <div className="space-y-6 max-w-3xl">
+        <div className="space-y-6">
+          {/* Project Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card accent>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-1">Sessions</p>
+              <p className="font-display text-2xl">{sessions.length}</p>
+            </Card>
+            <Card accent>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-1">Total Spent</p>
+              <p className="font-display text-2xl">
+                {"$"}{(sessions as Array<{total_cost_usd?: number | null}>).reduce((sum, s) => sum + (s.total_cost_usd || 0), 0).toFixed(2)}
+              </p>
+            </Card>
+            <Card accent>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-1">Budget / Session</p>
+              <p className="font-display text-2xl">
+                {project.max_budget_usd ? `$${project.max_budget_usd}` : "No limit"}
+              </p>
+            </Card>
+            <Card accent>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-1">Time Limit</p>
+              <p className="font-display text-2xl">{project.time_limit_minutes}m</p>
+            </Card>
+          </div>
+
           {project.description && (
             <Card>
               <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-2">
@@ -338,7 +343,7 @@ export default function ProjectDetailPage() {
 
       {/* Rubric Tab */}
       {activeTab === "rubric" && (
-        <div className="space-y-4 max-w-3xl">
+        <div className="space-y-4">
           {project.rubric && project.rubric.length > 0 ? (
             project.rubric.map((dim, i) => (
               <Card key={i}>
@@ -441,8 +446,8 @@ export default function ProjectDetailPage() {
                       <span className="font-mono text-xs text-muted">
                         {formatDuration(session.started_at, session.ended_at)}
                       </span>
-                      {scores[session.id] != null && (
-                        <span className="font-mono text-sm">{scores[session.id]!.toFixed(1)}/10</span>
+                      {session.overall_score != null && (
+                        <span className="font-mono text-sm">{session.overall_score.toFixed(1)}/10</span>
                       )}
                       <Badge variant={sessionStatusVariant[session.status] || "default"}>
                         {session.status}

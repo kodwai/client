@@ -13,7 +13,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   const pathname = usePathname();
 
   return (
-    <div className="max-w-4xl">
+    <div>
       <nav className="flex gap-4 sm:gap-6 border-b border-border mb-6 sm:mb-8 overflow-x-auto">
         {tabs.map((tab) => {
           const isActive =

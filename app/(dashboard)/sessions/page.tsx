@@ -18,6 +18,7 @@ interface Session {
   created_at: string;
   started_at: string | null;
   ended_at: string | null;
+  overall_score: number | null;
 }
 
 const statusVariant: Record<string, BadgeVariant> = {
@@ -62,7 +63,6 @@ export default function SessionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [scores, setScores] = useState<Record<string, number | null>>({});
   const router = useRouter();
 
   useEffect(() => {
@@ -74,26 +74,6 @@ export default function SessionsPage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [statusFilter]);
-
-  // Fetch scores for completed sessions
-  useEffect(() => {
-    const completed = sessions.filter((s) => s.status === "completed");
-    if (completed.length === 0) return;
-
-    completed.forEach((s) => {
-      if (scores[s.id] !== undefined) return;
-      api
-        .get(`/api/sessions/${s.id}/scores`)
-        .then((data) => {
-          const list = Array.isArray(data) ? data : [];
-          const ai = list.find((sc: { score_type: string }) => sc.score_type === "ai");
-          setScores((prev) => ({ ...prev, [s.id]: ai?.overall_score ?? null }));
-        })
-        .catch(() => {
-          setScores((prev) => ({ ...prev, [s.id]: null }));
-        });
-    });
-  }, [sessions]);
 
   if (loading) {
     return (
@@ -154,8 +134,8 @@ export default function SessionsPage() {
                 <span>{session.project_title || session.project_id}</span>
                 <span>{formatDate(session.created_at)}</span>
                 <span>{formatDuration(session.started_at, session.ended_at)}</span>
-                {scores[session.id] != null && (
-                  <span className="text-ink">{scores[session.id]!.toFixed(1)}/10</span>
+                {session.overall_score != null && (
+                  <span className="text-ink">{session.overall_score!.toFixed(1)}/10</span>
                 )}
               </div>
             </div>
@@ -213,7 +193,7 @@ export default function SessionsPage() {
                     {formatDuration(session.started_at, session.ended_at)}
                   </td>
                   <td className="py-4 font-mono text-sm">
-                    {scores[session.id] != null ? `${scores[session.id]!.toFixed(1)}/10` : "—"}
+                    {session.overall_score != null ? `${session.overall_score!.toFixed(1)}/10` : "—"}
                   </td>
                 </tr>
               ))}
