@@ -144,7 +144,7 @@ export default function EditProjectPage() {
                 label="Budget per Session (USD)"
                 type="number"
                 min={0}
-                step={0.5}
+                step={0.01}
                 value={maxBudgetUsd}
                 onChange={(e) => setMaxBudgetUsd(e.target.value)}
                 placeholder="e.g. 5.00"
