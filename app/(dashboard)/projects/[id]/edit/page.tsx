@@ -27,6 +27,7 @@ export default function EditProjectPage() {
   const [timeLimitMinutes, setTimeLimitMinutes] = useState(60);
   const [difficulty, setDifficulty] = useState("medium");
   const [rubricDimensions, setRubricDimensions] = useState<RubricDimension[]>([]);
+  const [maxBudgetUsd, setMaxBudgetUsd] = useState<string>("");
   const [allowedTools, setAllowedTools] = useState<string[] | null>(null);
   const [disallowedTools, setDisallowedTools] = useState<string[] | null>(null);
 
@@ -40,6 +41,7 @@ export default function EditProjectPage() {
         setTimeLimitMinutes(data.time_limit_minutes || 60);
         setDifficulty(data.difficulty || "medium");
         setRubricDimensions(data.rubric || []);
+        setMaxBudgetUsd(data.max_budget_usd != null ? String(data.max_budget_usd) : "");
         setAllowedTools(data.allowed_tools || null);
         setDisallowedTools(data.disallowed_tools || null);
       })
@@ -59,6 +61,7 @@ export default function EditProjectPage() {
         problem_statement_md: problemStatement,
         time_limit_minutes: timeLimitMinutes,
         difficulty,
+        max_budget_usd: maxBudgetUsd ? parseFloat(maxBudgetUsd) : null,
         rubric: rubricDimensions,
         allowed_tools: allowedTools,
         disallowed_tools: disallowedTools,
@@ -117,7 +120,7 @@ export default function EditProjectPage() {
               rows={8}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Input
                 label="Time Limit (minutes)"
                 type="number"
@@ -135,6 +138,16 @@ export default function EditProjectPage() {
                   { value: "medium", label: "Medium" },
                   { value: "hard", label: "Hard" },
                 ]}
+              />
+
+              <Input
+                label="Budget per Session (USD)"
+                type="number"
+                min={0}
+                step={0.5}
+                value={maxBudgetUsd}
+                onChange={(e) => setMaxBudgetUsd(e.target.value)}
+                placeholder="e.g. 5.00"
               />
             </div>
           </div>

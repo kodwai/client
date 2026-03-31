@@ -111,7 +111,7 @@ export default function NewProjectPage() {
               />
 
               <Input
-                label="Budget Limit (USD)"
+                label="Budget per Session (USD)"
                 type="number"
                 min={0}
                 step={0.5}
