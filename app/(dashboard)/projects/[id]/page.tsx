@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Divider } from "@/components/ui/divider";
 import { Modal } from "@/components/ui/modal";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface RubricDimension {
   name: string;
@@ -83,6 +85,8 @@ export default function ProjectDetailPage() {
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [deleteSessionTarget, setDeleteSessionTarget] = useState<Session | null>(null);
+  const [deletingSession, setDeletingSession] = useState(false);
 
   // Session creation form
   const [showSessionForm, setShowSessionForm] = useState(false);
@@ -200,6 +204,20 @@ export default function ProjectDetailPage() {
     }
   }
 
+  async function handleDeleteSession() {
+    if (!deleteSessionTarget) return;
+    setDeletingSession(true);
+    try {
+      await api.delete(`/api/sessions/${deleteSessionTarget.id}`);
+      setSessions((prev) => prev.filter((s) => s.id !== deleteSessionTarget.id));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to delete session.");
+    } finally {
+      setDeletingSession(false);
+      setDeleteSessionTarget(null);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -313,9 +331,17 @@ export default function ProjectDetailPage() {
               <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-2">
                 Problem Statement
               </label>
-              <pre className="whitespace-pre-wrap font-display text-base leading-relaxed">
-                {project.problem_statement_md}
-              </pre>
+              <div className="prose prose-sm max-w-none font-display leading-relaxed
+                prose-headings:font-display prose-headings:text-ink
+                prose-p:text-ink prose-li:text-ink
+                prose-code:font-mono prose-code:text-sm prose-code:bg-cream-dark prose-code:px-1 prose-code:py-0.5
+                prose-pre:bg-cream-dark prose-pre:font-mono prose-pre:text-sm
+                prose-a:text-rust prose-a:no-underline hover:prose-a:underline
+                prose-strong:text-ink prose-th:text-left prose-th:font-mono prose-th:text-xs prose-th:uppercase prose-th:tracking-widest">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {project.problem_statement_md}
+                </ReactMarkdown>
+              </div>
             </Card>
           )}
 
@@ -452,6 +478,12 @@ export default function ProjectDetailPage() {
                       <Badge variant={sessionStatusVariant[session.status] || "default"}>
                         {session.status}
                       </Badge>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteSessionTarget(session); }}
+                        className="font-mono text-xs text-muted hover:text-rust transition-colors"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 </Card>
@@ -478,6 +510,16 @@ export default function ProjectDetailPage() {
         confirmLabel="Archive"
         onConfirm={handleArchive}
         loading={archiving}
+      />
+
+      <Modal
+        open={deleteSessionTarget !== null}
+        onClose={() => setDeleteSessionTarget(null)}
+        title="Delete Session"
+        description={`This will permanently delete the session for "${deleteSessionTarget?.candidate_name}" and all its data. This action cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={handleDeleteSession}
+        loading={deletingSession}
       />
     </div>
   );

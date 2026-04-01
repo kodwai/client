@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Badge, BadgeVariant } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Divider } from "@/components/ui/divider";
+import { Modal } from "@/components/ui/modal";
 
 interface Session {
   id: string;
@@ -63,6 +65,8 @@ export default function SessionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Session | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -74,6 +78,20 @@ export default function SessionsPage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, [statusFilter]);
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/api/sessions/${deleteTarget.id}`);
+      setSessions((prev) => prev.filter((s) => s.id !== deleteTarget.id));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to delete session.");
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
+  }
 
   if (loading) {
     return (
@@ -130,13 +148,21 @@ export default function SessionsPage() {
                   {session.status}
                 </Badge>
               </div>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-muted mt-2">
-                <span>{session.project_title || session.project_id}</span>
-                <span>{formatDate(session.created_at)}</span>
-                <span>{formatDuration(session.started_at, session.ended_at)}</span>
-                {session.overall_score != null && (
-                  <span className="text-ink">{session.overall_score!.toFixed(1)}/10</span>
-                )}
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-muted">
+                  <span>{session.project_title || session.project_id}</span>
+                  <span>{formatDate(session.created_at)}</span>
+                  <span>{formatDuration(session.started_at, session.ended_at)}</span>
+                  {session.overall_score != null && (
+                    <span className="text-ink">{session.overall_score!.toFixed(1)}/10</span>
+                  )}
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setDeleteTarget(session); }}
+                  className="font-mono text-xs text-muted hover:text-rust transition-colors ml-2 shrink-0"
+                >
+                  Delete
+                </button>
               </div>
             </div>
           ))}
@@ -162,9 +188,10 @@ export default function SessionsPage() {
                 <th className="text-left font-mono text-xs uppercase tracking-widest text-muted pb-3 pr-4">
                   Duration
                 </th>
-                <th className="text-left font-mono text-xs uppercase tracking-widest text-muted pb-3">
+                <th className="text-left font-mono text-xs uppercase tracking-widest text-muted pb-3 pr-4">
                   Score
                 </th>
+                <th className="pb-3"></th>
               </tr>
             </thead>
             <tbody>
@@ -192,8 +219,16 @@ export default function SessionsPage() {
                   <td className="py-4 pr-4 font-mono text-sm">
                     {formatDuration(session.started_at, session.ended_at)}
                   </td>
-                  <td className="py-4 font-mono text-sm">
+                  <td className="py-4 pr-4 font-mono text-sm">
                     {session.overall_score != null ? `${session.overall_score!.toFixed(1)}/10` : "—"}
+                  </td>
+                  <td className="py-4">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setDeleteTarget(session); }}
+                      className="font-mono text-xs text-muted hover:text-rust transition-colors"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -202,6 +237,15 @@ export default function SessionsPage() {
         </div>
         </>
       )}
+      <Modal
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        title="Delete Session"
+        description={`This will permanently delete the session for "${deleteTarget?.candidate_name}" and all its data. This action cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
     </div>
   );
 }
