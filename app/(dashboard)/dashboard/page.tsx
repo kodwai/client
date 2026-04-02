@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Divider } from "@/components/ui/divider";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { formatDate } from "@/lib/date";
 
 interface Stats {
   totalProjects: number;
@@ -69,7 +70,7 @@ export default function DashboardPage() {
         Welcome{user?.name ? `, ${user.name}` : ""}
       </h1>
       <p className="text-muted font-mono text-sm mb-2">
-        Your AI interview platform overview
+        Your interview dashboard overview
       </p>
       <Divider className="mx-0 my-8" />
 
@@ -100,7 +101,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="font-mono text-xs text-muted">
-                      {new Date(session.created_at).toLocaleDateString()}
+                      {formatDate(session.created_at)}
                     </span>
                     <Badge variant={session.status === "active" ? "success" : session.status === "completed" ? "info" : "default"}>
                       {session.status}

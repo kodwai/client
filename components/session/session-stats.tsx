@@ -40,12 +40,13 @@ export function SessionStats({ session, eventCount, fileCount }: SessionStatsPro
   useEffect(() => {
     if (!session.started_at) return;
 
-    const start = new Date(session.started_at).getTime();
+    const _p = (t: string) => { const s = t.endsWith("Z") || t.includes("+") ? t : t.replace(" ", "T") + "Z"; return new Date(s).getTime(); };
+    const start = _p(session.started_at);
 
     // For completed sessions, compute final elapsed from ended_at
     if (session.status !== "active") {
       if (session.ended_at) {
-        const end = new Date(session.ended_at).getTime();
+        const end = _p(session.ended_at);
         setElapsed(Math.floor((end - start) / 1000));
       }
       return;

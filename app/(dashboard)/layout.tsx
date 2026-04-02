@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { Divider } from "@/components/ui/divider";
 
@@ -59,7 +59,7 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
           fixed inset-y-0 left-0 z-50 w-64 border-r border-border bg-cream flex flex-col
           transform transition-transform duration-200 ease-in-out
           ${open ? "translate-x-0" : "-translate-x-full"}
-          md:static md:translate-x-0 md:min-h-screen md:bg-white/50
+          md:sticky md:top-0 md:translate-x-0 md:h-screen md:bg-white/50
         `}
       >
         <div className="p-6">
@@ -122,6 +122,19 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  // Guard: redirect developer users to their dashboard
+  useEffect(() => {
+    if (!loading && user && (user as any).user_type === "developer") {
+      router.push("/dev/challenges");
+    }
+  }, [loading, user, router]);
+
+  if (!loading && user && (user as any).user_type === "developer") {
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen">

@@ -22,7 +22,9 @@ export default function LoginPage() {
     try {
       const data = await api.post("/api/auth/login", { email, password });
       localStorage.setItem("token", data.access_token);
-      router.push("/dashboard");
+      // Route based on user type
+      const userType = data.user?.user_type;
+      router.push(userType === "developer" ? "/dev/challenges" : "/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {

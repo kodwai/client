@@ -18,3 +18,24 @@ body {
   color: var(--color-ink);
   font-family: var(--font-display);
 }
+
+/* Data tables: horizontally scrollable on mobile, contained within viewport */
+.admin-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  max-width: 100%;
+}
+.admin-table-scroll > div {
+  min-width: 700px;
+}
+
+/* Custom select dropdown — hide native arrow, add SVG chevron with balanced padding */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239a948a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+}

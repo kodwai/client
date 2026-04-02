@@ -40,9 +40,17 @@ const STATUS_OPTIONS = [
   { value: "error", label: "Error" },
 ];
 
+function _parseUTC(ts: string | null): Date | null {
+  if (!ts) return null;
+  const s = ts.endsWith("Z") || ts.includes("+") ? ts : ts.replace(" ", "T") + "Z";
+  return new Date(s);
+}
+
 function formatDuration(startedAt: string | null, endedAt: string | null): string {
-  if (!startedAt || !endedAt) return "—";
-  const ms = new Date(endedAt).getTime() - new Date(startedAt).getTime();
+  const s = _parseUTC(startedAt);
+  const e = _parseUTC(endedAt);
+  if (!s || !e) return "—";
+  const ms = e.getTime() - s.getTime();
   if (ms < 0) return "—";
   const totalSecs = Math.floor(ms / 1000);
   const mins = Math.floor(totalSecs / 60);
@@ -51,7 +59,9 @@ function formatDuration(startedAt: string | null, endedAt: string | null): strin
 }
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
+  const d = _parseUTC(iso);
+  if (!d) return "—";
+  return d.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",

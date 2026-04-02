@@ -49,7 +49,8 @@ function getToolSummary(data: Record<string, unknown>): string {
 }
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("en-US", {
+  const ts = iso.endsWith("Z") || iso.includes("+") ? iso : iso.replace(" ", "T") + "Z";
+  return new Date(ts).toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",

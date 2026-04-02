@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# kodwai — Client
+
+The web application for [kodwai](https://kodwai.com), the AI-agent coding platform.
+
+## Overview
+
+This is a Next.js 16 application with three route groups:
+
+- **(developer)** — Developer platform: challenges, submissions, leaderboard, badges, profile
+- **(dashboard)** — Company platform: interview projects, sessions, scoring, team management
+- **(admin)** — Admin panel: users, organizations, challenges, analytics, system health
+
+## Tech Stack
+
+- **Next.js 16** with App Router
+- **React 19**
+- **Tailwind CSS 4**
+- **TypeScript**
+
+## Design System
+
+- Background: `#faf8f4` (warm cream)
+- Accent: `#c23616` (rust/terracotta)
+- Display font: Instrument Serif
+- Mono font: Space Mono
+- Logo font: Playfair Display
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
 
-## Learn More
+## Routes
 
-To learn more about Next.js, take a look at the following resources:
+### Developer (`/dev/*`)
+- `/dev/challenges` — Browse coding challenges
+- `/dev/challenges/[slug]` — Challenge detail + start
+- `/dev/submissions` — Your submission history
+- `/dev/submissions/[id]` — Submission detail + score breakdown
+- `/dev/leaderboard` — Global rankings
+- `/dev/badges` — Achievement badges
+- `/dev/profile` — Your profile
+- `/dev/settings` — API key management
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Company (`/dashboard`, `/projects/*`, `/sessions/*`, `/settings/*`)
+- `/dashboard` — Interview overview
+- `/projects` — Interview project management
+- `/sessions` — Session monitoring + scoring
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Admin (`/admin/*`)
+- `/admin/dashboard` — Platform stats
+- `/admin/users` — User management (verify, ban, roles)
+- `/admin/challenges` — Challenge CRUD
+- `/admin/submissions` — All submissions + re-score
+- `/admin/analytics` — Signups, submissions, agent usage charts
+- `/admin/system` — Health check + audit log

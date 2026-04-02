@@ -16,8 +16,8 @@ const TRANSCRIPT_TYPES = new Set([
 ]);
 
 function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const ts = iso.endsWith("Z") || iso.includes("+") ? iso : iso.replace(" ", "T") + "Z";
+  return new Date(ts).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
 /**

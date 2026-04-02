@@ -121,7 +121,8 @@ export default function ProjectDetailPage() {
 
   function formatDuration(startedAt: string | null, endedAt: string | null): string {
     if (!startedAt || !endedAt) return "—";
-    const ms = new Date(endedAt).getTime() - new Date(startedAt).getTime();
+    const _p = (t: string) => { const s = t.endsWith("Z") || t.includes("+") ? t : t.replace(" ", "T") + "Z"; return new Date(s).getTime(); };
+    const ms = _p(endedAt) - _p(startedAt);
     if (ms < 0) return "—";
     const totalSecs = Math.floor(ms / 1000);
     const mins = Math.floor(totalSecs / 60);

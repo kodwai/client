@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "kodwai — AI Interview Platform",
+    name: "kodwai — AI-Agent Coding Platform",
     short_name: "kodwai",
     description:
-      "Technical interviews powered by Claude Code. Full session capture. AI-powered scoring.",
+      "Prove your AI-agent coding skills. Challenges, leaderboards, badges. Plus AI-native interviews for companies.",
     start_url: "/",
     display: "standalone",
     background_color: "#faf8f4",

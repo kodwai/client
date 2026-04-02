@@ -41,7 +41,8 @@ const statusVariant: Record<string, BadgeVariant> = {
 
 function formatDate(iso: string | null): string {
   if (!iso) return "\u2014";
-  return new Date(iso).toLocaleDateString("en-US", {
+  const ts = iso.endsWith("Z") || iso.includes("+") ? iso : iso.replace(" ", "T") + "Z";
+  return new Date(ts).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -280,7 +281,8 @@ export default function SessionDetailPage() {
                   <span className="font-display text-base">
                     {session.started_at && session.ended_at
                       ? (() => {
-                          const ms = new Date(session.ended_at).getTime() - new Date(session.started_at).getTime();
+                          const _p = (t: string) => { const s = t.endsWith("Z") || t.includes("+") ? t : t.replace(" ", "T") + "Z"; return new Date(s).getTime(); };
+                          const ms = _p(session.ended_at) - _p(session.started_at);
                           const mins = Math.floor(ms / 60000);
                           const secs = Math.floor((ms % 60000) / 1000);
                           return `${mins}m ${secs}s`;

@@ -15,6 +15,9 @@ interface User {
   id: string;
   name: string;
   email: string;
+  user_type: "developer" | "company";
+  username?: string;
+  organization_id?: string;
   company_name?: string;
 }
 
@@ -27,6 +30,10 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+function getHomeRoute(userType: string): string {
+  return userType === "developer" ? "/dev/challenges" : "/dashboard";
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -70,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("token", data.access_token);
       setToken(data.access_token);
       setUser(data.user);
-      router.push("/dashboard");
+      router.push(getHomeRoute(data.user?.user_type || "company"));
     },
     [router]
   );

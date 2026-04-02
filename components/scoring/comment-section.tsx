@@ -18,7 +18,8 @@ interface CommentSectionProps {
 }
 
 function formatTimestamp(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
+  const ts = iso.endsWith("Z") || iso.includes("+") ? iso : iso.replace(" ", "T") + "Z";
+  return new Date(ts).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     hour: "2-digit",

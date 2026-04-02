@@ -408,7 +408,8 @@ function buildFileTree(events: SessionEvent[]): {
 
 function isRecentChange(timestamp: string | undefined): boolean {
   if (!timestamp) return false;
-  return Date.now() - new Date(timestamp).getTime() < 30_000;
+  const ts = timestamp.endsWith("Z") || timestamp.includes("+") ? timestamp : timestamp.replace(" ", "T") + "Z";
+  return Date.now() - new Date(ts).getTime() < 30_000;
 }
 
 function TreeNode({ node, depth, selectedPath, onSelect }: {
@@ -579,7 +580,7 @@ export function FileExplorer({ events }: FileExplorerProps) {
                   <span className="font-mono text-xs text-ink">{selectedPath}</span>
                 </div>
                 <span className="font-mono text-[10px] text-muted">
-                  {new Date(selectedContent.timestamp).toLocaleTimeString()}
+                  {new Date(selectedContent.timestamp?.endsWith?.("Z") ? selectedContent.timestamp : (selectedContent.timestamp || "") + "Z").toLocaleTimeString()}
                 </span>
               </div>
 
