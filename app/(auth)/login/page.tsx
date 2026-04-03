@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { GitHubButton } from "@/components/ui/github-button";
 import { api } from "@/lib/api";
 
 export default function LoginPage() {
@@ -44,6 +45,14 @@ export default function LoginPage() {
           {error}
         </div>
       )}
+
+      <GitHubButton label="Sign in with GitHub" />
+
+      <div className="flex items-center gap-4 my-6">
+        <div className="flex-1 h-px bg-border" />
+        <span className="font-mono text-[10px] uppercase tracking-widest text-muted">or</span>
+        <div className="flex-1 h-px bg-border" />
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Input
