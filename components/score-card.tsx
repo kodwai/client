@@ -1,8 +1,10 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { api } from "@/lib/api";
 
 interface ScoreCardProps {
+  submissionId: string;
   challengeTitle: string;
   challengeDifficulty: string;
   score: number;
@@ -54,6 +56,7 @@ function ScoreRing({ score }: { score: number }) {
 }
 
 export function ScoreCard({
+  submissionId,
   challengeTitle,
   challengeDifficulty,
   score,
@@ -66,22 +69,41 @@ export function ScoreCard({
   username,
 }: ScoreCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+
+  async function generateShareLink() {
+    if (shareUrl) return shareUrl;
+    setSharing(true);
+    try {
+      const data = await api.post(`/api/submissions/${submissionId}/share`, {});
+      const url = data.share_url;
+      setShareUrl(url);
+      return url;
+    } catch {
+      return "https://kodwai.com";
+    } finally {
+      setSharing(false);
+    }
+  }
 
   const shareText = `I scored ${score.toFixed(0)}/100 on "${challengeTitle}" using ${agentUsed} on @kodwai_com\n\nSolve AI-agent coding challenges and prove your skills: kodwai.com`;
-  const shareUrl = "https://kodwai.com";
 
-  function shareToX() {
-    const url = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
-    window.open(url, "_blank", "noopener,noreferrer,width=550,height=420");
+  async function shareToX() {
+    const url = await generateShareLink();
+    const tweetUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(url)}`;
+    window.open(tweetUrl, "_blank", "noopener,noreferrer,width=550,height=420");
   }
 
-  function shareToLinkedIn() {
-    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
-    window.open(url, "_blank", "noopener,noreferrer,width=550,height=420");
+  async function shareToLinkedIn() {
+    const url = await generateShareLink();
+    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+    window.open(linkedInUrl, "_blank", "noopener,noreferrer,width=550,height=420");
   }
 
-  function copyShareText() {
-    navigator.clipboard.writeText(shareText).catch(() => {});
+  async function copyShareLink() {
+    const url = await generateShareLink();
+    navigator.clipboard.writeText(url).catch(() => {});
   }
 
   const timePct = Math.min((timeMinutes / timeLimitMinutes) * 100, 100);
@@ -182,21 +204,24 @@ export function ScoreCard({
       <div className="flex items-center gap-3">
         <button
           onClick={shareToX}
-          className="flex items-center gap-2 px-4 py-2 bg-ink text-cream font-mono text-xs cursor-pointer border-none hover:bg-ink/80 transition-colors"
+          disabled={sharing}
+          className="flex items-center gap-2 px-4 py-2 bg-ink text-cream font-mono text-xs cursor-pointer border-none hover:bg-ink/80 transition-colors disabled:opacity-50"
         >
-          Share on X
+          {sharing ? "..." : "Share on X"}
         </button>
         <button
           onClick={shareToLinkedIn}
-          className="flex items-center gap-2 px-4 py-2 border border-border font-mono text-xs cursor-pointer bg-transparent hover:border-rust/30 transition-colors"
+          disabled={sharing}
+          className="flex items-center gap-2 px-4 py-2 border border-border font-mono text-xs cursor-pointer bg-transparent hover:border-rust/30 transition-colors disabled:opacity-50"
         >
           LinkedIn
         </button>
         <button
-          onClick={copyShareText}
-          className="flex items-center gap-2 px-4 py-2 border border-border font-mono text-xs cursor-pointer bg-transparent hover:border-rust/30 transition-colors"
+          onClick={copyShareLink}
+          disabled={sharing}
+          className="flex items-center gap-2 px-4 py-2 border border-border font-mono text-xs cursor-pointer bg-transparent hover:border-rust/30 transition-colors disabled:opacity-50"
         >
-          Copy
+          Copy Link
         </button>
       </div>
     </div>

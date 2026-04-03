@@ -263,6 +263,7 @@ export default function SubmissionDetailPage() {
         <div className="mb-6">
           <h2 className="font-display text-xl mb-4">Share Your Score</h2>
           <ScoreCard
+            submissionId={submission.id}
             challengeTitle={submission.challenge_title}
             challengeDifficulty={submission.challenge_difficulty}
             score={submission.score}
