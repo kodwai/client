@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/date";
 import { Card } from "@/components/ui/card";
@@ -41,6 +42,9 @@ export default function DevFeedbackPage() {
 
   return (
     <div>
+      <Link href="/dev/settings" className="font-mono text-xs text-muted hover:text-ink transition-colors mb-6 inline-block">
+        &larr; Back to settings
+      </Link>
       <h1 className="font-display text-3xl mb-1">My Feedback</h1>
       <p className="font-mono text-sm text-muted">Your submitted feedback and admin responses</p>
       <Divider className="mx-0 my-8" />
