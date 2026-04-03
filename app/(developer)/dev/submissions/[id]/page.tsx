@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Divider } from "@/components/ui/divider";
 import { ChallengeFeedbackForm } from "@/components/feedback/challenge-feedback-form";
+import { ScoreCard } from "@/components/score-card";
 
 interface Submission {
   id: string;
@@ -255,6 +256,24 @@ export default function SubmissionDetailPage() {
             </Card>
           )}
         </>
+      )}
+
+      {/* Shareable Score Card */}
+      {submission.status === "scored" && submission.score != null && (
+        <div className="mb-6">
+          <h2 className="font-display text-xl mb-4">Share Your Score</h2>
+          <ScoreCard
+            challengeTitle={submission.challenge_title}
+            challengeDifficulty={submission.challenge_difficulty}
+            score={submission.score}
+            objectiveScore={submission.score_breakdown?.objective?.total}
+            analyticalScore={submission.score_breakdown?.analytical?.total}
+            agentUsed={submission.agent_used || "Unknown"}
+            timeMinutes={timeMin || 0}
+            timeLimitMinutes={submission.challenge_time_limit_minutes || 60}
+            strengths={submission.score_breakdown?.analytical?.strengths}
+          />
+        </div>
       )}
 
       {/* Timestamps */}
