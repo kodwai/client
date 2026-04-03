@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/date";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Divider } from "@/components/ui/divider";
+import { PlatformFeedbackModal } from "@/components/feedback/platform-feedback-modal";
 
 const categoryLabels: Record<string, string> = {
   bug_report: "Bug Report",
@@ -32,12 +34,17 @@ const statusVariant: Record<string, "success" | "info" | "warning" | "error"> = 
 export default function DevFeedbackPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
 
-  useEffect(() => {
+  function fetchFeedback() {
     api.get("/api/feedback/platform/me")
       .then(setItems)
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    fetchFeedback();
   }, []);
 
   return (
@@ -45,8 +52,18 @@ export default function DevFeedbackPage() {
       <Link href="/dev/settings" className="font-mono text-xs text-muted hover:text-ink transition-colors mb-6 inline-block">
         &larr; Back to settings
       </Link>
-      <h1 className="font-display text-3xl mb-1">My Feedback</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="font-display text-3xl mb-1">My Feedback</h1>
+        <Button onClick={() => setModalOpen(true)}>New Feedback</Button>
+      </div>
       <p className="font-mono text-sm text-muted">Your submitted feedback and admin responses</p>
+      <PlatformFeedbackModal
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          fetchFeedback();
+        }}
+      />
       <Divider className="mx-0 my-8" />
 
       {loading ? (
