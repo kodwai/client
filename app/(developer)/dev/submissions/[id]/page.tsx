@@ -8,6 +8,7 @@ import { formatDateTime, getTimeMs } from "@/lib/date";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Divider } from "@/components/ui/divider";
+import { ChallengeFeedbackForm } from "@/components/feedback/challenge-feedback-form";
 
 interface Submission {
   id: string;
@@ -269,6 +270,14 @@ export default function SubmissionDetailPage() {
           )}
         </div>
       </Card>
+
+      {/* Challenge feedback — shown after scoring */}
+      {submission.status === "scored" && (
+        <ChallengeFeedbackForm
+          challengeId={submission.challenge_id}
+          submissionId={submission.id}
+        />
+      )}
     </div>
   );
 }
