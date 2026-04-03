@@ -24,35 +24,33 @@ const spaceMono = Space_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "kodwai — AI-Agent Coding Platform",
+  title: "kodwai — AI-Agent Coding Challenges",
   description:
-    "Prove your AI-agent coding skills. Solve challenges with Claude Code or Cursor, get scored, compete on leaderboards. Plus: AI-native technical interviews for companies.",
+    "Prove your AI-agent coding skills. Solve challenges on your own machine with Claude Code, Cursor, or any AI agent. Get scored, compete on leaderboards, build your profile.",
   keywords: [
     "AI coding challenges",
     "Claude Code",
     "Cursor",
     "AI coding agent",
     "developer leaderboard",
-    "AI interview",
-    "technical interview",
     "coding platform",
     "AI-agent skills",
-    "engineering hiring",
+    "developer challenges",
   ],
   icons: {
     icon: [{ url: "/icon", sizes: "512x512", type: "image/png" }],
     apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
-    title: "kodwai — AI-Agent Coding Platform",
+    title: "kodwai — AI-Agent Coding Challenges",
     description:
-      "Solve AI-agent coding challenges. Get scored on how you use Claude Code and Cursor. Compete on leaderboards. Earn badges. Plus: AI-native interviews for companies.",
+      "Solve AI-agent coding challenges on your own machine with Claude Code, Cursor, and more. Compete on leaderboards. Earn badges.",
     type: "website",
     siteName: "kodwai",
   },
   twitter: {
     card: "summary_large_image",
-    title: "kodwai — AI-Agent Coding Platform",
+    title: "kodwai — AI-Agent Coding Challenges",
     description:
       "Prove your AI-agent coding skills. Challenges, leaderboards, badges. The platform where developers compete on how well they wield AI.",
   },
