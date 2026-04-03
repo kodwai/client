@@ -15,6 +15,7 @@ const navLinks = [
   { href: "/admin/submissions", label: "Submissions" },
   { href: "/admin/leaderboard", label: "Leaderboard" },
   { href: "/admin/badges", label: "Badges" },
+  { href: "/admin/feedback", label: "Feedback" },
   { href: "/admin/api-keys", label: "API Keys" },
   { href: "/admin/analytics", label: "Analytics" },
   { href: "/admin/system", label: "System" },

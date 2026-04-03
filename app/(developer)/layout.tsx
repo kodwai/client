@@ -5,12 +5,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { Divider } from "@/components/ui/divider";
+import { PlatformFeedbackModal } from "@/components/feedback/platform-feedback-modal";
 
 const navLinks = [
   { href: "/dev/challenges", label: "Challenges" },
   { href: "/dev/submissions", label: "Submissions" },
   { href: "/dev/leaderboard", label: "Leaderboard" },
   { href: "/dev/badges", label: "Badges" },
+  { href: "/dev/feedback", label: "Feedback" },
   { href: "/dev/profile", label: "Profile" },
   { href: "/dev/settings", label: "Settings" },
 ];
@@ -34,7 +36,7 @@ function MobileHeader({ onToggle }: { onToggle: () => void }) {
   );
 }
 
-function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+function Sidebar({ open, onClose, onFeedback }: { open: boolean; onClose: () => void; onFeedback: () => void }) {
   const pathname = usePathname();
   const { user, logout, loading } = useAuth();
 
@@ -119,12 +121,20 @@ function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
               </div>
             </div>
           )}
-          <button
-            onClick={logout}
-            className="font-mono text-xs uppercase tracking-widest text-muted hover:text-rust transition-colors"
-          >
-            Log out
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={onFeedback}
+              className="font-mono text-xs uppercase tracking-widest text-muted hover:text-rust transition-colors"
+            >
+              Send Feedback
+            </button>
+            <button
+              onClick={logout}
+              className="font-mono text-xs uppercase tracking-widest text-muted hover:text-rust transition-colors"
+            >
+              Log out
+            </button>
+          </div>
         </div>
       </aside>
     </>
@@ -135,6 +145,7 @@ function DeveloperShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   // Guard: redirect company users to their dashboard
   useEffect(() => {
@@ -149,11 +160,12 @@ function DeveloperShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} onFeedback={() => setFeedbackOpen(true)} />
       <div className="flex-1 flex flex-col min-h-screen">
         <MobileHeader onToggle={() => setSidebarOpen(true)} />
         <main className="flex-1 p-4 md:p-8 overflow-auto">{children}</main>
       </div>
+      <PlatformFeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </div>
   );
 }
