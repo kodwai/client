@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -174,6 +175,20 @@ export default function DeveloperSettingsPage() {
         onConfirm={handleDelete}
         loading={deleting}
       />
+
+      <Divider className="mx-0 my-8" />
+
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h2 className="font-display text-xl">Feedback</h2>
+          <p className="font-mono text-xs text-muted mt-1">
+            View your submitted feedback, bug reports, and feature requests — including admin responses.
+          </p>
+        </div>
+        <Link href="/dev/settings/feedback">
+          <Button variant="secondary">View Feedback</Button>
+        </Link>
+      </div>
     </div>
   );
 }

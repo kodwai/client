@@ -12,7 +12,6 @@ const navLinks = [
   { href: "/dev/submissions", label: "Submissions" },
   { href: "/dev/leaderboard", label: "Leaderboard" },
   { href: "/dev/badges", label: "Badges" },
-  { href: "/dev/feedback", label: "Feedback" },
   { href: "/dev/profile", label: "Profile" },
   { href: "/dev/settings", label: "Settings" },
 ];
