@@ -1,0 +1,527 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { api } from "@/lib/api";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge, BadgeVariant } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+import { Divider } from "@/components/ui/divider";
+import { Modal } from "@/components/ui/modal";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+interface RubricDimension {
+  name: string;
+  weight: number;
+  description: string;
+}
+
+interface Project {
+  id: string;
+  title: string;
+  description: string;
+  problem_statement_md: string;
+  difficulty: string;
+  time_limit_minutes: number;
+  max_budget_usd: number | null;
+  rubric: RubricDimension[];
+  allowed_tools: string[] | null;
+  disallowed_tools: string[] | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Session {
+  id: string;
+  candidate_name: string;
+  candidate_email: string;
+  status: string;
+  created_at: string;
+  started_at: string | null;
+  ended_at: string | null;
+  overall_score: number | null;
+}
+
+interface ApiKey {
+  id: string;
+  label: string;
+}
+
+const difficultyVariant: Record<string, BadgeVariant> = {
+  easy: "success",
+  medium: "warning",
+  hard: "error",
+};
+
+const sessionStatusVariant: Record<string, BadgeVariant> = {
+  pending: "default",
+  active: "success",
+  completed: "info",
+  expired: "warning",
+  error: "error",
+};
+
+type Tab = "overview" | "rubric" | "sessions";
+
+export default function ProjectDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const projectId = params.id as string;
+
+  const [project, setProject] = useState<Project | null>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
+
+  const [sortByScore, setSortByScore] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+  const [deleteSessionTarget, setDeleteSessionTarget] = useState<Session | null>(null);
+  const [deletingSession, setDeletingSession] = useState(false);
+
+  // Session creation form
+  const [showSessionForm, setShowSessionForm] = useState(false);
+  const [candidateName, setCandidateName] = useState("");
+  const [candidateEmail, setCandidateEmail] = useState("");
+  const [selectedApiKey, setSelectedApiKey] = useState("");
+  const [creatingSession, setCreatingSession] = useState(false);
+  const [sessionError, setSessionError] = useState("");
+
+  useEffect(() => {
+    Promise.all([
+      api.get(`/api/projects/${projectId}`),
+      api.get(`/api/sessions?project_id=${projectId}`),
+    ])
+      .then(([proj, sess]) => {
+        setProject(proj);
+        setSessions(Array.isArray(sess) ? sess : sess.items || []);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [projectId]);
+
+  useEffect(() => {
+    if (showSessionForm && apiKeys.length === 0) {
+      api.get("/api/api-keys").then((data) => {
+        const keys = Array.isArray(data) ? data : data.items || [];
+        setApiKeys(keys);
+        if (keys.length > 0) setSelectedApiKey(keys[0].id);
+      }).catch(() => {});
+    }
+  }, [showSessionForm, apiKeys.length]);
+
+  function formatDuration(startedAt: string | null, endedAt: string | null): string {
+    if (!startedAt || !endedAt) return "—";
+    const _p = (t: string) => { const s = t.endsWith("Z") || t.includes("+") ? t : t.replace(" ", "T") + "Z"; return new Date(s).getTime(); };
+    const ms = _p(endedAt) - _p(startedAt);
+    if (ms < 0) return "—";
+    const totalSecs = Math.floor(ms / 1000);
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
+    return `${mins}m ${secs}s`;
+  }
+
+  const sortedSessions = sortByScore
+    ? [...sessions].sort((a, b) => {
+        const sa = a.overall_score ?? -1;
+        const sb = b.overall_score ?? -1;
+        return sb - sa;
+      })
+    : sessions;
+
+  async function handleDuplicate() {
+    if (!project) return;
+    setDuplicating(true);
+    try {
+      const payload = {
+        title: `${project.title} (Copy)`,
+        description: project.description,
+        problem_statement_md: project.problem_statement_md,
+        time_limit_minutes: project.time_limit_minutes,
+        difficulty: project.difficulty,
+        max_budget_usd: project.max_budget_usd,
+        rubric: project.rubric,
+        allowed_tools: project.allowed_tools,
+        disallowed_tools: project.disallowed_tools,
+      };
+      const dup = await api.post("/api/projects", payload);
+      router.push(`/projects/${dup.id}`);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to duplicate.");
+    } finally {
+      setDuplicating(false);
+      setShowDuplicateModal(false);
+    }
+  }
+
+  async function handleArchive() {
+    if (!project) return;
+    setArchiving(true);
+    try {
+      await api.delete(`/api/projects/${projectId}`);
+      router.push("/projects");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to archive.");
+      setArchiving(false);
+      setShowArchiveModal(false);
+    }
+  }
+
+  async function handleCreateSession(e: React.FormEvent) {
+    e.preventDefault();
+    setCreatingSession(true);
+    setSessionError("");
+
+    if (!selectedApiKey) {
+      setSessionError("Please add an API key in Settings → API Keys first.");
+      setCreatingSession(false);
+      return;
+    }
+
+    try {
+      const session = await api.post("/api/sessions", {
+        project_id: projectId,
+        candidate_name: candidateName,
+        candidate_email: candidateEmail,
+        api_key_id: selectedApiKey,
+      });
+      setSessions((prev) => [session, ...prev]);
+      setCandidateName("");
+      setCandidateEmail("");
+      setShowSessionForm(false);
+    } catch (err: unknown) {
+      setSessionError(err instanceof Error ? err.message : "Failed to create session.");
+    } finally {
+      setCreatingSession(false);
+    }
+  }
+
+  async function handleDeleteSession() {
+    if (!deleteSessionTarget) return;
+    setDeletingSession(true);
+    try {
+      await api.delete(`/api/sessions/${deleteSessionTarget.id}`);
+      setSessions((prev) => prev.filter((s) => s.id !== deleteSessionTarget.id));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to delete session.");
+    } finally {
+      setDeletingSession(false);
+      setDeleteSessionTarget(null);
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="font-mono text-sm text-muted uppercase tracking-widest">Loading...</p>
+      </div>
+    );
+  }
+
+  if (error && !project) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="font-mono text-sm text-rust">{error}</p>
+      </div>
+    );
+  }
+
+  if (!project) return null;
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: "overview", label: "Overview" },
+    { key: "rubric", label: "Rubric" },
+    { key: "sessions", label: "Sessions" },
+  ];
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-2">
+        <div>
+          <h1 className="font-display text-2xl sm:text-3xl">{project.title}</h1>
+          <div className="flex items-center gap-3 mt-2 flex-wrap">
+            <Badge variant={difficultyVariant[project.difficulty] || "default"}>
+              {project.difficulty}
+            </Badge>
+            <span className="font-mono text-xs text-muted">{project.time_limit_minutes} min</span>
+            {project.max_budget_usd && (
+              <span className="font-mono text-xs text-muted">${project.max_budget_usd} budget</span>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <Link href={`/projects/${projectId}/edit`}>
+            <Button variant="secondary">Edit</Button>
+          </Link>
+          <Button variant="secondary" onClick={() => setShowDuplicateModal(true)}>
+            Duplicate
+          </Button>
+          <Button variant="secondary" onClick={() => setShowArchiveModal(true)}>
+            Archive
+          </Button>
+        </div>
+      </div>
+      <Divider className="mx-0 my-8" />
+
+      {error && <p className="font-mono text-xs text-rust mb-4">{error}</p>}
+
+      {/* Tabs */}
+      <div className="flex gap-4 sm:gap-6 mb-8 border-b border-border overflow-x-auto">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`pb-3 font-mono text-xs uppercase tracking-widest transition-colors ${
+              activeTab === tab.key
+                ? "text-rust border-b-2 border-rust"
+                : "text-muted hover:text-ink"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Overview Tab */}
+      {activeTab === "overview" && (
+        <div className="space-y-6">
+          {/* Project Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card accent>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-1">Sessions</p>
+              <p className="font-display text-2xl">{sessions.length}</p>
+            </Card>
+            <Card accent>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-1">Total Spent</p>
+              <p className="font-display text-2xl">
+                {"$"}{(sessions as Array<{total_cost_usd?: number | null}>).reduce((sum, s) => sum + (s.total_cost_usd || 0), 0).toFixed(2)}
+              </p>
+            </Card>
+            <Card accent>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-1">Budget / Session</p>
+              <p className="font-display text-2xl">
+                {project.max_budget_usd ? `$${project.max_budget_usd}` : "No limit"}
+              </p>
+            </Card>
+            <Card accent>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-1">Time Limit</p>
+              <p className="font-display text-2xl">{project.time_limit_minutes}m</p>
+            </Card>
+          </div>
+
+          {project.description && (
+            <Card>
+              <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-2">
+                Description
+              </label>
+              <p className="font-display text-lg">{project.description}</p>
+            </Card>
+          )}
+
+          {project.problem_statement_md && (
+            <Card accent>
+              <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-2">
+                Problem Statement
+              </label>
+              <div className="prose prose-sm max-w-none font-display leading-relaxed
+                prose-headings:font-display prose-headings:text-ink
+                prose-p:text-ink prose-li:text-ink
+                prose-code:font-mono prose-code:text-sm prose-code:bg-cream-dark prose-code:px-1 prose-code:py-0.5
+                prose-pre:bg-cream-dark prose-pre:font-mono prose-pre:text-sm
+                prose-a:text-rust prose-a:no-underline hover:prose-a:underline
+                prose-strong:text-ink prose-th:text-left prose-th:font-mono prose-th:text-xs prose-th:uppercase prose-th:tracking-widest">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {project.problem_statement_md}
+                </ReactMarkdown>
+              </div>
+            </Card>
+          )}
+
+          {(project.allowed_tools || project.disallowed_tools) && (
+            <Card>
+              <label className="block font-mono text-xs uppercase tracking-widest text-muted mb-3">
+                Tool Configuration
+              </label>
+              {project.allowed_tools && (
+                <div className="mb-3">
+                  <span className="font-mono text-xs text-muted">Allowed: </span>
+                  <span className="font-mono text-sm">{project.allowed_tools.join(", ")}</span>
+                </div>
+              )}
+              {project.disallowed_tools && (
+                <div>
+                  <span className="font-mono text-xs text-muted">Blocked: </span>
+                  <span className="font-mono text-sm">{project.disallowed_tools.join(", ")}</span>
+                </div>
+              )}
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Rubric Tab */}
+      {activeTab === "rubric" && (
+        <div className="space-y-4">
+          {project.rubric && project.rubric.length > 0 ? (
+            project.rubric.map((dim, i) => (
+              <Card key={i}>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-display text-lg">{dim.name}</h3>
+                    {dim.description && (
+                      <p className="text-muted text-sm mt-1">{dim.description}</p>
+                    )}
+                  </div>
+                  <Badge>{dim.weight}/10</Badge>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <Card className="text-center py-8">
+              <p className="font-mono text-sm text-muted">No rubric dimensions defined.</p>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Sessions Tab */}
+      {activeTab === "sessions" && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="font-mono text-xs text-muted uppercase tracking-widest">
+                {sessions.length} session{sessions.length !== 1 ? "s" : ""}
+              </span>
+              <button
+                onClick={() => setSortByScore(!sortByScore)}
+                className={`font-mono text-xs uppercase tracking-widest transition-colors ${
+                  sortByScore ? "text-rust" : "text-muted hover:text-ink"
+                }`}
+              >
+                {sortByScore ? "Sorted by Score" : "Sort by Score"}
+              </button>
+            </div>
+            <Button onClick={() => setShowSessionForm(!showSessionForm)}>
+              {showSessionForm ? "Cancel" : "New Session"}
+            </Button>
+          </div>
+
+          {showSessionForm && (
+            <Card accent>
+              <form onSubmit={handleCreateSession} className="space-y-4">
+                <Input
+                  label="Candidate Name"
+                  value={candidateName}
+                  onChange={(e) => setCandidateName(e.target.value)}
+                  placeholder="Jane Doe"
+                  required
+                />
+                <Input
+                  label="Candidate Email"
+                  type="email"
+                  value={candidateEmail}
+                  onChange={(e) => setCandidateEmail(e.target.value)}
+                  placeholder="jane@example.com"
+                  required
+                />
+                {apiKeys.length > 0 && (
+                  <Select
+                    label="API Key"
+                    value={selectedApiKey}
+                    onChange={(e) => setSelectedApiKey(e.target.value)}
+                    options={apiKeys.map((k) => ({ value: k.id, label: k.label }))}
+                    placeholder="Select an API key"
+                  />
+                )}
+                {sessionError && <p className="font-mono text-xs text-rust">{sessionError}</p>}
+                <Button type="submit" disabled={creatingSession}>
+                  {creatingSession ? "Creating..." : "Create Session"}
+                </Button>
+              </form>
+            </Card>
+          )}
+
+          {sessions.length === 0 && !showSessionForm ? (
+            <Card className="text-center py-8">
+              <p className="font-mono text-sm text-muted">No sessions yet for this project.</p>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {sortedSessions.map((session) => (
+                <Card
+                  key={session.id}
+                  className="cursor-pointer hover:border-rust transition-colors"
+                  onClick={() => router.push(`/sessions/${session.id}`)}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div>
+                      <span className="font-display text-lg">{session.candidate_name}</span>
+                      <span className="font-mono text-xs text-muted ml-3">
+                        {session.candidate_email}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-mono text-xs text-muted">
+                        {formatDuration(session.started_at, session.ended_at)}
+                      </span>
+                      {session.overall_score != null && (
+                        <span className="font-mono text-sm">{session.overall_score.toFixed(1)}/10</span>
+                      )}
+                      <Badge variant={sessionStatusVariant[session.status] || "default"}>
+                        {session.status}
+                      </Badge>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setDeleteSessionTarget(session); }}
+                        className="font-mono text-xs text-muted hover:text-rust transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      <Modal
+        open={showDuplicateModal}
+        onClose={() => setShowDuplicateModal(false)}
+        title="Duplicate Project"
+        description={`This will create a copy of "${project.title}" with all its settings and rubric.`}
+        confirmLabel="Duplicate"
+        onConfirm={handleDuplicate}
+        loading={duplicating}
+      />
+
+      <Modal
+        open={showArchiveModal}
+        onClose={() => setShowArchiveModal(false)}
+        title="Archive Project"
+        description="This will archive the project and all its sessions. This action cannot be undone."
+        confirmLabel="Archive"
+        onConfirm={handleArchive}
+        loading={archiving}
+      />
+
+      <Modal
+        open={deleteSessionTarget !== null}
+        onClose={() => setDeleteSessionTarget(null)}
+        title="Delete Session"
+        description={`This will permanently delete the session for "${deleteSessionTarget?.candidate_name}" and all its data. This action cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={handleDeleteSession}
+        loading={deletingSession}
+      />
+    </div>
+  );
+}
