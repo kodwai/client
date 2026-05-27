@@ -13,6 +13,15 @@ import { ScoreCard } from "@/components/score-card";
 import { isV2, type ScoreBreakdownV2 } from "@/lib/scoring";
 import { ScoreBreakdownV2View } from "@/components/score-breakdown";
 
+interface LegacyDimension { name: string; score: number; max: number; max_score?: number; detail?: string; justification?: string; }
+interface LegacyBreakdownData {
+  is_late?: boolean;
+  late_penalty?: number;
+  objective?: { total?: number; dimensions?: LegacyDimension[] };
+  analytical?: { total?: number; summary?: string; dimensions?: LegacyDimension[]; strengths?: string[]; weaknesses?: string[] };
+  analytical_skipped?: boolean;
+}
+
 interface Submission {
   id: string;
   challenge_id: string;
@@ -157,7 +166,7 @@ export default function SubmissionDetailPage() {
         isV2(submission.score_breakdown) ? (
           <ScoreBreakdownV2View breakdown={submission.score_breakdown as ScoreBreakdownV2} />
         ) : (
-          <LegacyBreakdown bd={submission.score_breakdown as any} />
+          <LegacyBreakdown bd={submission.score_breakdown as LegacyBreakdownData} />
         )
       )}
 
@@ -168,6 +177,7 @@ export default function SubmissionDetailPage() {
           {(() => {
             const bd = submission.score_breakdown;
             const v2 = isV2(bd) ? (bd as ScoreBreakdownV2) : null;
+            const legacy = v2 ? null : (bd as LegacyBreakdownData | null);
             const axisScore = (name: string) => v2?.axes.find((a) => a.name === name)?.score;
             return (
               <ScoreCard
@@ -175,15 +185,15 @@ export default function SubmissionDetailPage() {
                 challengeTitle={submission.challenge_title}
                 challengeDifficulty={submission.challenge_difficulty}
                 score={submission.score}
-                objectiveScore={v2 ? undefined : (bd as any)?.objective?.total}
-                analyticalScore={v2 ? undefined : (bd as any)?.analytical?.total}
+                objectiveScore={legacy?.objective?.total}
+                analyticalScore={legacy?.analytical?.total}
                 directionScore={axisScore("direction")}
                 outcomeScore={axisScore("outcome")}
                 liftScore={axisScore("lift")}
                 agentUsed={submission.agent_used || "Unknown"}
                 timeMinutes={timeMin || 0}
                 timeLimitMinutes={submission.challenge_time_limit_minutes || 60}
-                strengths={v2 ? undefined : (bd as any)?.analytical?.strengths}
+                strengths={legacy?.analytical?.strengths}
               />
             );
           })()}
@@ -254,7 +264,7 @@ function LiveTimer({ startedAt, timeLimitMinutes }: { startedAt: string; timeLim
   );
 }
 
-function LegacyBreakdown({ bd }: { bd: any }) {
+function LegacyBreakdown({ bd }: { bd: LegacyBreakdownData }) {
   return (
     <>
       {/* Late penalty notice */}
@@ -282,7 +292,7 @@ function LegacyBreakdown({ bd }: { bd: any }) {
             </span>
           </div>
           <div className="space-y-4">
-            {bd.objective.dimensions?.map((dim: any) => (
+            {bd.objective.dimensions?.map((dim) => (
               <div key={dim.name}>
                 <ScoreBar label={dim.name} value={dim.score} max={dim.max} />
                 {dim.detail && (
@@ -307,7 +317,7 @@ function LegacyBreakdown({ bd }: { bd: any }) {
             <p className="font-mono text-sm mb-4">{bd.analytical.summary}</p>
           )}
           <div className="space-y-4">
-            {bd.analytical.dimensions?.map((dim: any) => (
+            {bd.analytical.dimensions?.map((dim) => (
               <div key={dim.name}>
                 <ScoreBar label={dim.name} value={dim.score} max={dim.max_score || 10} />
                 {dim.justification && (
@@ -316,21 +326,21 @@ function LegacyBreakdown({ bd }: { bd: any }) {
               </div>
             ))}
           </div>
-          {bd.analytical.strengths?.length > 0 && (
+          {(bd.analytical.strengths ?? []).length > 0 && (
             <div className="mt-4">
               <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-2">Strengths</p>
               <ul className="space-y-1">
-                {bd.analytical.strengths.map((s: string, i: number) => (
+                {(bd.analytical.strengths ?? []).map((s, i) => (
                   <li key={i} className="font-mono text-xs text-green-700">+ {s}</li>
                 ))}
               </ul>
             </div>
           )}
-          {bd.analytical.weaknesses?.length > 0 && (
+          {(bd.analytical.weaknesses ?? []).length > 0 && (
             <div className="mt-3">
               <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-2">Areas to Improve</p>
               <ul className="space-y-1">
-                {bd.analytical.weaknesses.map((w: string, i: number) => (
+                {(bd.analytical.weaknesses ?? []).map((w, i) => (
                   <li key={i} className="font-mono text-xs text-rust">- {w}</li>
                 ))}
               </ul>
