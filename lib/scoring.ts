@@ -23,6 +23,8 @@ export interface ScoreBreakdownV2 {
   leaderboard_eligible: boolean;
   baseline_lift: { beat: boolean; delta: number } | null;
   axes: AxisResult[];
+  confidence?: "high" | "medium" | "low" | "none";
+  trace_quality?: string | null;
 }
 
 export interface RubricSignal { name: string; label: string; description: string; weight: number; }

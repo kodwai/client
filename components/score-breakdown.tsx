@@ -85,6 +85,15 @@ export function ScoreBreakdownV2View({ breakdown }: { breakdown: ScoreBreakdownV
           </p>
         </Card>
       )}
+      {(breakdown.confidence === "none" || breakdown.confidence === "low") && (
+        <Card className="mb-6">
+          <p className="font-mono text-xs text-muted">
+            {breakdown.confidence === "none"
+              ? "No agent trace captured — the Direction (process) score couldn’t be assessed from your session."
+              : "Thin agent trace — the Direction (process) score is low-confidence. Richer sessions score more reliably."}
+          </p>
+        </Card>
+      )}
       {breakdown.baseline_lift?.beat && (
         <Card className="mb-6 border-green-600/30 bg-green-600/5">
           <p className="font-display text-base text-green-700">You beat the solo-AI baseline by {breakdown.baseline_lift.delta} points 🎉</p>
