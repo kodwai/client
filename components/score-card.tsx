@@ -10,6 +10,9 @@ interface ScoreCardProps {
   score: number;
   objectiveScore?: number;
   analyticalScore?: number;
+  directionScore?: number;
+  outcomeScore?: number;
+  liftScore?: number;
   agentUsed: string;
   timeMinutes: number;
   timeLimitMinutes: number;
@@ -62,6 +65,9 @@ export function ScoreCard({
   score,
   objectiveScore,
   analyticalScore,
+  directionScore,
+  outcomeScore,
+  liftScore,
   agentUsed,
   timeMinutes,
   timeLimitMinutes,
@@ -134,27 +140,65 @@ export function ScoreCard({
         <div className="flex items-center gap-6 mb-6">
           <ScoreRing score={score} />
           <div className="flex-1 space-y-3">
-            {objectiveScore != null && (
-              <div>
-                <div className="flex justify-between mb-0.5">
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-muted">Objective</span>
-                  <span className="font-mono text-xs">{objectiveScore.toFixed(0)}</span>
+            {directionScore != null ? (
+              <>
+                <div>
+                  <div className="flex justify-between mb-0.5">
+                    <span className="font-mono text-[10px] uppercase tracking-widest text-muted">Direction</span>
+                    <span className="font-mono text-xs">{directionScore.toFixed(0)}/50</span>
+                  </div>
+                  <div className="h-1.5 bg-border overflow-hidden">
+                    <div className="h-full bg-ink/60 transition-all" style={{ width: `${Math.min((directionScore / 50) * 100, 100)}%` }} />
+                  </div>
                 </div>
-                <div className="h-1.5 bg-border overflow-hidden">
-                  <div className="h-full bg-ink/60 transition-all" style={{ width: `${Math.min((objectiveScore / 85) * 100, 100)}%` }} />
-                </div>
-              </div>
-            )}
-            {analyticalScore != null && (
-              <div>
-                <div className="flex justify-between mb-0.5">
-                  <span className="font-mono text-[10px] uppercase tracking-widest text-muted">AI Analysis</span>
-                  <span className="font-mono text-xs">{analyticalScore.toFixed(0)}</span>
-                </div>
-                <div className="h-1.5 bg-border overflow-hidden">
-                  <div className="h-full bg-ink/60 transition-all" style={{ width: `${Math.min(analyticalScore, 100)}%` }} />
-                </div>
-              </div>
+                {outcomeScore != null && (
+                  <div>
+                    <div className="flex justify-between mb-0.5">
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-muted">Outcome</span>
+                      <span className="font-mono text-xs">{outcomeScore.toFixed(0)}/35</span>
+                    </div>
+                    <div className="h-1.5 bg-border overflow-hidden">
+                      <div className="h-full bg-ink/60 transition-all" style={{ width: `${Math.min((outcomeScore / 35) * 100, 100)}%` }} />
+                    </div>
+                  </div>
+                )}
+                {liftScore != null && (
+                  <div>
+                    <div className="flex justify-between mb-0.5">
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-muted">Lift</span>
+                      <span className="font-mono text-xs">{liftScore.toFixed(0)}/15</span>
+                    </div>
+                    <div className="h-1.5 bg-border overflow-hidden">
+                      <div className="h-full bg-ink/60 transition-all" style={{ width: `${Math.min((liftScore / 15) * 100, 100)}%` }} />
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {objectiveScore != null && (
+                  <div>
+                    <div className="flex justify-between mb-0.5">
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-muted">Objective</span>
+                      <span className="font-mono text-xs">{objectiveScore.toFixed(0)}</span>
+                    </div>
+                    <div className="h-1.5 bg-border overflow-hidden">
+                      <div className="h-full bg-ink/60 transition-all" style={{ width: `${Math.min((objectiveScore / 85) * 100, 100)}%` }} />
+                    </div>
+                  </div>
+                )}
+                {analyticalScore != null && (
+                  <div>
+                    <div className="flex justify-between mb-0.5">
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-muted">AI Analysis</span>
+                      <span className="font-mono text-xs">{analyticalScore.toFixed(0)}</span>
+                    </div>
+                    <div className="h-1.5 bg-border overflow-hidden">
+                      <div className="h-full bg-ink/60 transition-all" style={{ width: `${Math.min(analyticalScore, 100)}%` }} />
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

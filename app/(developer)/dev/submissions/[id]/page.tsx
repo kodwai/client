@@ -10,6 +10,17 @@ import { Badge } from "@/components/ui/badge";
 import { Divider } from "@/components/ui/divider";
 import { ChallengeFeedbackForm } from "@/components/feedback/challenge-feedback-form";
 import { ScoreCard } from "@/components/score-card";
+import { isV2, type ScoreBreakdownV2 } from "@/lib/scoring";
+import { ScoreBreakdownV2View } from "@/components/score-breakdown";
+
+interface LegacyDimension { name: string; score: number; max: number; max_score?: number; detail?: string; justification?: string; }
+interface LegacyBreakdownData {
+  is_late?: boolean;
+  late_penalty?: number;
+  objective?: { total?: number; dimensions?: LegacyDimension[] };
+  analytical?: { total?: number; summary?: string; dimensions?: LegacyDimension[]; strengths?: string[]; weaknesses?: string[] };
+  analytical_skipped?: boolean;
+}
 
 interface Submission {
   id: string;
@@ -21,16 +32,7 @@ interface Submission {
   status: string;
   agent_used: string | null;
   score: number | null;
-  score_breakdown: {
-    test_pass_rate?: number;
-    time_score?: number;
-    analytical?: any;
-    analytical_skipped?: boolean;
-    is_late?: boolean;
-    late_penalty?: number;
-    objective?: any;
-    overall?: number;
-  } | null;
+  score_breakdown: Record<string, unknown> | null;
   time_taken_ms: number | null;
   started_at: string;
   submitted_at: string | null;
@@ -161,119 +163,40 @@ export default function SubmissionDetailPage() {
       )}
 
       {submission.score_breakdown && (
-        <>
-          {/* Late penalty notice */}
-          {submission.score_breakdown.is_late && (
-            <Card className="mb-6 border-rust/30 bg-rust/5">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">&#9202;</span>
-                <div>
-                  <p className="font-display text-base">Late Submission</p>
-                  <p className="font-mono text-xs text-muted">
-                    Time limit exceeded — a {submission.score_breakdown.late_penalty} point penalty was applied to your score.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {/* Objective scoring */}
-          {submission.score_breakdown.objective && (
-            <Card accent className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display text-xl">Objective Score</h2>
-                <span className="font-mono text-sm text-muted">
-                  {submission.score_breakdown.objective.total?.toFixed(1)}/85
-                </span>
-              </div>
-              <div className="space-y-4">
-                {submission.score_breakdown.objective.dimensions?.map((dim: any) => (
-                  <div key={dim.name}>
-                    <ScoreBar label={dim.name} value={dim.score} max={dim.max} />
-                    {dim.detail && (
-                      <p className="font-mono text-[10px] text-muted mt-0.5">{dim.detail}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
-
-          {/* Analytical scoring */}
-          {submission.score_breakdown.analytical ? (
-            <Card accent className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-display text-xl">AI Analysis</h2>
-                <span className="font-mono text-sm text-muted">
-                  {submission.score_breakdown.analytical.total?.toFixed(1)}/100
-                </span>
-              </div>
-              {submission.score_breakdown.analytical.summary && (
-                <p className="font-mono text-sm mb-4">{submission.score_breakdown.analytical.summary}</p>
-              )}
-              <div className="space-y-4">
-                {submission.score_breakdown.analytical.dimensions?.map((dim: any) => (
-                  <div key={dim.name}>
-                    <ScoreBar label={dim.name} value={dim.score} max={dim.max_score || 10} />
-                    {dim.justification && (
-                      <p className="font-mono text-[10px] text-muted mt-0.5">{dim.justification}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {submission.score_breakdown.analytical.strengths?.length > 0 && (
-                <div className="mt-4">
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-2">Strengths</p>
-                  <ul className="space-y-1">
-                    {submission.score_breakdown.analytical.strengths.map((s: string, i: number) => (
-                      <li key={i} className="font-mono text-xs text-green-700">+ {s}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {submission.score_breakdown.analytical.weaknesses?.length > 0 && (
-                <div className="mt-3">
-                  <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-2">Areas to Improve</p>
-                  <ul className="space-y-1">
-                    {submission.score_breakdown.analytical.weaknesses.map((w: string, i: number) => (
-                      <li key={i} className="font-mono text-xs text-rust">- {w}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </Card>
-          ) : submission.score_breakdown.analytical_skipped && (
-            <Card className="mb-6">
-              <div className="p-3 border border-border">
-                <p className="font-mono text-xs text-muted">
-                  AI-powered analytical scoring was skipped — add your Anthropic API key in{" "}
-                  <Link href="/dev/settings" className="text-rust hover:text-rust-hover transition-colors">
-                    Settings
-                  </Link>{" "}
-                  to unlock detailed feedback on problem solving, code quality, and agent collaboration.
-                </p>
-              </div>
-            </Card>
-          )}
-        </>
+        isV2(submission.score_breakdown) ? (
+          <ScoreBreakdownV2View breakdown={submission.score_breakdown as ScoreBreakdownV2} />
+        ) : (
+          <LegacyBreakdown bd={submission.score_breakdown as LegacyBreakdownData} />
+        )
       )}
 
       {/* Shareable Score Card */}
       {submission.status === "scored" && submission.score != null && (
         <div className="mb-6">
           <h2 className="font-display text-xl mb-4">Share Your Score</h2>
-          <ScoreCard
-            submissionId={submission.id}
-            challengeTitle={submission.challenge_title}
-            challengeDifficulty={submission.challenge_difficulty}
-            score={submission.score}
-            objectiveScore={submission.score_breakdown?.objective?.total}
-            analyticalScore={submission.score_breakdown?.analytical?.total}
-            agentUsed={submission.agent_used || "Unknown"}
-            timeMinutes={timeMin || 0}
-            timeLimitMinutes={submission.challenge_time_limit_minutes || 60}
-            strengths={submission.score_breakdown?.analytical?.strengths}
-          />
+          {(() => {
+            const bd = submission.score_breakdown;
+            const v2 = isV2(bd) ? (bd as ScoreBreakdownV2) : null;
+            const legacy = v2 ? null : (bd as LegacyBreakdownData | null);
+            const axisScore = (name: string) => v2?.axes.find((a) => a.name === name)?.score;
+            return (
+              <ScoreCard
+                submissionId={submission.id}
+                challengeTitle={submission.challenge_title}
+                challengeDifficulty={submission.challenge_difficulty}
+                score={submission.score}
+                objectiveScore={legacy?.objective?.total}
+                analyticalScore={legacy?.analytical?.total}
+                directionScore={axisScore("direction")}
+                outcomeScore={axisScore("outcome")}
+                liftScore={axisScore("lift")}
+                agentUsed={submission.agent_used || "Unknown"}
+                timeMinutes={timeMin || 0}
+                timeLimitMinutes={submission.challenge_time_limit_minutes || 60}
+                strengths={legacy?.analytical?.strengths}
+              />
+            );
+          })()}
         </div>
       )}
 
@@ -338,6 +261,106 @@ function LiveTimer({ startedAt, timeLimitMinutes }: { startedAt: string; timeLim
         />
       </div>
     </div>
+  );
+}
+
+function LegacyBreakdown({ bd }: { bd: LegacyBreakdownData }) {
+  return (
+    <>
+      {/* Late penalty notice */}
+      {bd.is_late && (
+        <Card className="mb-6 border-rust/30 bg-rust/5">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">&#9202;</span>
+            <div>
+              <p className="font-display text-base">Late Submission</p>
+              <p className="font-mono text-xs text-muted">
+                Time limit exceeded — a {bd.late_penalty} point penalty was applied to your score.
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Objective scoring */}
+      {bd.objective && (
+        <Card accent className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-xl">Objective Score</h2>
+            <span className="font-mono text-sm text-muted">
+              {bd.objective.total?.toFixed(1)}/85
+            </span>
+          </div>
+          <div className="space-y-4">
+            {bd.objective.dimensions?.map((dim) => (
+              <div key={dim.name}>
+                <ScoreBar label={dim.name} value={dim.score} max={dim.max} />
+                {dim.detail && (
+                  <p className="font-mono text-[10px] text-muted mt-0.5">{dim.detail}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Analytical scoring */}
+      {bd.analytical ? (
+        <Card accent className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-xl">AI Analysis</h2>
+            <span className="font-mono text-sm text-muted">
+              {bd.analytical.total?.toFixed(1)}/100
+            </span>
+          </div>
+          {bd.analytical.summary && (
+            <p className="font-mono text-sm mb-4">{bd.analytical.summary}</p>
+          )}
+          <div className="space-y-4">
+            {bd.analytical.dimensions?.map((dim) => (
+              <div key={dim.name}>
+                <ScoreBar label={dim.name} value={dim.score} max={dim.max_score || 10} />
+                {dim.justification && (
+                  <p className="font-mono text-[10px] text-muted mt-0.5">{dim.justification}</p>
+                )}
+              </div>
+            ))}
+          </div>
+          {(bd.analytical.strengths ?? []).length > 0 && (
+            <div className="mt-4">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-2">Strengths</p>
+              <ul className="space-y-1">
+                {(bd.analytical.strengths ?? []).map((s, i) => (
+                  <li key={i} className="font-mono text-xs text-green-700">+ {s}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {(bd.analytical.weaknesses ?? []).length > 0 && (
+            <div className="mt-3">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-2">Areas to Improve</p>
+              <ul className="space-y-1">
+                {(bd.analytical.weaknesses ?? []).map((w, i) => (
+                  <li key={i} className="font-mono text-xs text-rust">- {w}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </Card>
+      ) : bd.analytical_skipped && (
+        <Card className="mb-6">
+          <div className="p-3 border border-border">
+            <p className="font-mono text-xs text-muted">
+              AI-powered analytical scoring was skipped — add your Anthropic API key in{" "}
+              <Link href="/dev/settings" className="text-rust hover:text-rust-hover transition-colors">
+                Settings
+              </Link>{" "}
+              to unlock detailed feedback on problem solving, code quality, and agent collaboration.
+            </p>
+          </div>
+        </Card>
+      )}
+    </>
   );
 }
 
