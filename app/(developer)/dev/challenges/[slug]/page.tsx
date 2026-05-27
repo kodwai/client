@@ -8,6 +8,7 @@ import { formatDate } from "@/lib/date";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Divider } from "@/components/ui/divider";
+import { ScoringRubric } from "@/components/scoring-rubric";
 
 interface Challenge {
   id: string;
@@ -125,6 +126,8 @@ export default function ChallengeDetailPage() {
           </div>
         </Card>
       </div>
+
+      <ScoringRubric slug={challenge.slug} />
 
       {/* Start Challenge */}
       <Card accent>
