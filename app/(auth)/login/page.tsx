@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GitHubButton } from "@/components/ui/github-button";
 import { api } from "@/lib/api";
+import posthog from "posthog-js";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,10 +24,21 @@ export default function LoginPage() {
     try {
       const data = await api.post("/api/auth/login", { email, password });
       localStorage.setItem("token", data.access_token);
-      // Route based on user type
       const userType = data.user?.user_type;
-      router.push(userType === "developer" ? "/dev/challenges" : "/dashboard");
+      posthog.identify(data.user?.id ?? email, {
+        email,
+        user_type: userType,
+      });
+      posthog.capture("user_logged_in", { method: "email", user_type: userType });
+      // Honor a relative ?next= target (e.g. the CLI authorization page) over the default home.
+      const next = new URLSearchParams(window.location.search).get("next");
+      if (next && next.startsWith("/")) {
+        router.push(next);
+      } else {
+        router.push(userType === "developer" ? "/dev/challenges" : "/dashboard");
+      }
     } catch (err) {
+      posthog.captureException(err);
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
@@ -71,6 +83,14 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           required
         />
+        <div className="text-right -mt-2">
+          <Link
+            href="/forgot-password"
+            className="font-mono text-xs uppercase tracking-widest text-muted hover:text-rust transition-colors"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <Button type="submit" disabled={loading} className="w-full">
           {loading ? "Signing in..." : "Sign in"}
         </Button>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import posthog from "posthog-js";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
@@ -46,8 +47,16 @@ export default function NewProjectPage() {
       };
 
       const project = await api.post("/api/projects", payload);
+      posthog.capture("project_created", {
+        project_id: project.id,
+        difficulty,
+        time_limit_minutes: timeLimitMinutes,
+        has_budget: !!maxBudgetUsd,
+        rubric_dimension_count: rubricDimensions.length,
+      });
       router.push(`/projects/${project.id}`);
     } catch (err: unknown) {
+      posthog.captureException(err);
       setError(err instanceof Error ? err.message : "Failed to create project.");
     } finally {
       setSaving(false);

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
+import { SocialLink } from "@/components/ui/social-link";
 
 interface Profile {
   name: string;
@@ -19,6 +20,7 @@ interface Profile {
   github_url: string | null;
   linkedin_url: string | null;
   website_url: string | null;
+  x_url: string | null;
   skills: string[];
   preferred_agent: string | null;
   total_score: number;
@@ -26,6 +28,15 @@ interface Profile {
   rank: number | null;
   streak_days: number;
   recent_submissions?: Submission[];
+}
+
+function normalizeXHandle(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const handle = trimmed.replace(/^@+/, "").replace(/\s+/g, "");
+  if (!handle) return null;
+  return `https://x.com/${handle}`;
 }
 
 interface Submission {
@@ -55,6 +66,7 @@ export default function ProfilePage() {
   const [githubUrl, setGithubUrl] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
+  const [xHandle, setXHandle] = useState("");
 
   useEffect(() => {
     api.get("/api/developers/me")
@@ -64,6 +76,7 @@ export default function ProfilePage() {
         setGithubUrl(data.github_url || "");
         setLinkedinUrl(data.linkedin_url || "");
         setWebsiteUrl(data.website_url || "");
+        setXHandle(data.x_url || "");
       })
       .catch(() => setProfile(null))
       .finally(() => setLoading(false));
@@ -77,8 +90,10 @@ export default function ProfilePage() {
         github_url: githubUrl || null,
         linkedin_url: linkedinUrl || null,
         website_url: websiteUrl || null,
+        x_url: normalizeXHandle(xHandle),
       });
       setProfile(data);
+      setXHandle(data.x_url || "");
       setEditing(false);
     } catch {
       // ignore
@@ -148,23 +163,12 @@ export default function ProfilePage() {
         </div>
 
         {/* Links */}
-        {!editing && (profile.github_url || profile.linkedin_url || profile.website_url) && (
-          <div className="flex gap-4 mt-4 pt-4 border-t border-border">
-            {profile.github_url && (
-              <a href={profile.github_url} target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-rust hover:text-rust-hover transition-colors">
-                GitHub
-              </a>
-            )}
-            {profile.linkedin_url && (
-              <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-rust hover:text-rust-hover transition-colors">
-                LinkedIn
-              </a>
-            )}
-            {profile.website_url && (
-              <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-rust hover:text-rust-hover transition-colors">
-                Website
-              </a>
-            )}
+        {!editing && (profile.github_url || profile.linkedin_url || profile.website_url || profile.x_url) && (
+          <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 pt-4 border-t border-border">
+            {profile.github_url && <SocialLink kind="github" href={profile.github_url} />}
+            {profile.x_url && <SocialLink kind="x" href={profile.x_url} />}
+            {profile.linkedin_url && <SocialLink kind="linkedin" href={profile.linkedin_url} />}
+            {profile.website_url && <SocialLink kind="website" href={profile.website_url} />}
           </div>
         )}
       </Card>
@@ -176,6 +180,7 @@ export default function ProfilePage() {
           <div className="space-y-4">
             <Textarea label="Bio" value={bio} onChange={(e) => setBio(e.target.value)} placeholder="Tell others about yourself" />
             <Input label="GitHub URL" value={githubUrl} onChange={(e) => setGithubUrl(e.target.value)} placeholder="https://github.com/username" />
+            <Input label="X (Twitter)" value={xHandle} onChange={(e) => setXHandle(e.target.value)} placeholder="@yourhandle or https://x.com/yourhandle" />
             <Input label="LinkedIn URL" value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} placeholder="https://linkedin.com/in/username" />
             <Input label="Website" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://yoursite.com" />
             <Button onClick={handleSave} disabled={saving}>

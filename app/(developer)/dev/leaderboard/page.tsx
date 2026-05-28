@@ -17,12 +17,25 @@ interface LeaderboardEntry {
   rank: number;
 }
 
+interface CategoryCount {
+  category: string;
+  count: number;
+}
+
 export default function LeaderboardPage() {
   const { user } = useAuth();
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [agent, setAgent] = useState("");
   const [category, setCategory] = useState("");
+  const [categories, setCategories] = useState<CategoryCount[]>([]);
+
+  useEffect(() => {
+    api
+      .get("/api/challenges/categories")
+      .then((data: CategoryCount[]) => setCategories(data || []))
+      .catch(() => setCategories([]));
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
@@ -75,13 +88,11 @@ export default function LeaderboardPage() {
           className="px-3 py-2 border border-border bg-transparent font-mono text-sm"
         >
           <option value="">All categories</option>
-          <option value="backend">Backend</option>
-          <option value="frontend">Frontend</option>
-          <option value="fullstack">Fullstack</option>
-          <option value="algorithms">Algorithms</option>
-          <option value="system-design">System Design</option>
-          <option value="data">Data</option>
-          <option value="devops">DevOps</option>
+          {categories.map((c) => (
+            <option key={c.category} value={c.category}>
+              {c.category.charAt(0).toUpperCase() + c.category.slice(1).replace(/-/g, " ")}
+            </option>
+          ))}
         </select>
       </div>
 

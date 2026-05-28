@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import posthog from "posthog-js";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -81,9 +82,18 @@ function ChallengeFeedbackForm({ challengeId, submissionId }: ChallengeFeedbackF
         comment: comment.trim() || null,
         submission_id: submissionId || null,
       });
+      posthog.capture("challenge_feedback_submitted", {
+        challenge_id: challengeId,
+        rating_overall: ratingOverall,
+        rating_difficulty: ratingDifficulty || null,
+        rating_clarity: ratingClarity || null,
+        has_comment: comment.trim().length > 0,
+        is_update: editing,
+      });
       setSubmitted(true);
       setEditing(false);
     } catch (err: any) {
+      posthog.captureException(err);
       setError(err.message || "Failed to submit feedback");
     } finally {
       setSubmitting(false);

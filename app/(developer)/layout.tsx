@@ -149,12 +149,17 @@ function DeveloperShell({ children }: { children: React.ReactNode }) {
 
   // Guard: redirect company users to their dashboard
   useEffect(() => {
-    if (!loading && user && user.user_type === "company") {
+    if (loading || !user) return;
+    if (user.user_type === "company") {
       router.push("/dashboard");
+      return;
+    }
+    if (!user.has_claude_api_key) {
+      router.replace("/onboarding/claude-key");
     }
   }, [loading, user, router]);
 
-  if (!loading && user && user.user_type === "company") {
+  if (!loading && user && (user.user_type === "company" || !user.has_claude_api_key)) {
     return null;
   }
 

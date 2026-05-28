@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/date";
+import posthog from "posthog-js";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Divider } from "@/components/ui/divider";
@@ -42,6 +43,12 @@ export default function ChallengeDetailPage() {
       try {
         const data = await api.get(`/api/challenges/${slug}`);
         setChallenge(data);
+        posthog.capture("challenge_viewed", {
+          challenge_slug: data.slug,
+          challenge_title: data.title,
+          difficulty: data.difficulty,
+          category: data.category,
+        });
       } catch {
         setChallenge(null);
       } finally {
@@ -71,11 +78,17 @@ export default function ChallengeDetailPage() {
   }
 
   const cliCommand = `npx @kodwai/cli challenge ${challenge.slug}`;
+  const { slug: challengeSlug, title: challengeTitle, difficulty: challengeDifficulty } = challenge;
 
   function handleCopy() {
     navigator.clipboard.writeText(cliCommand);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    posthog.capture("challenge_cli_command_copied", {
+      challenge_slug: challengeSlug,
+      challenge_title: challengeTitle,
+      difficulty: challengeDifficulty,
+    });
   }
 
   return (
@@ -127,7 +140,7 @@ export default function ChallengeDetailPage() {
         </Card>
       </div>
 
-      <ScoringRubric slug={challenge.slug} />
+      <ScoringRubric />
 
       {/* Start Challenge */}
       <Card accent>

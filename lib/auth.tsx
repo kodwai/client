@@ -19,6 +19,7 @@ interface User {
   username?: string;
   organization_id?: string;
   company_name?: string;
+  has_claude_api_key: boolean;
 }
 
 interface AuthContextValue {
@@ -27,6 +28,7 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -71,19 +73,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
   }, [logout, router]);
 
+  const refreshUser = useCallback(async () => {
+    const fresh = await api.get("/api/auth/me");
+    setUser(fresh);
+  }, []);
+
   const login = useCallback(
     async (email: string, password: string) => {
       const data = await api.post("/api/auth/login", { email, password });
       localStorage.setItem("token", data.access_token);
       setToken(data.access_token);
-      setUser(data.user);
-      router.push(getHomeRoute(data.user?.user_type || "company"));
+      const me = await api.get("/api/auth/me");
+      setUser(me);
+      if (me.user_type === "developer" && !me.has_claude_api_key) {
+        router.push("/onboarding/claude-key");
+      } else {
+        router.push(getHomeRoute(me.user_type));
+      }
     },
     [router]
   );
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

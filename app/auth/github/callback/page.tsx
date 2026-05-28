@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
+import posthog from "posthog-js";
 
 function GitHubCallbackContent() {
   const router = useRouter();
@@ -21,9 +22,19 @@ function GitHubCallbackContent() {
       .then((data) => {
         localStorage.setItem("token", data.access_token);
         const userType = data.user?.user_type;
-        router.push(userType === "developer" ? "/dev/challenges" : "/dashboard");
+        posthog.identify(data.user?.id ?? data.user?.email, {
+          email: data.user?.email,
+          user_type: userType,
+        });
+        posthog.capture("github_auth_completed", { user_type: userType });
+        if (userType === "developer" && !data.user?.has_claude_api_key) {
+          router.push("/onboarding/claude-key");
+        } else {
+          router.push(userType === "developer" ? "/dev/challenges" : "/dashboard");
+        }
       })
       .catch((err) => {
+        posthog.captureException(err);
         setError(err.message || "GitHub login failed");
       });
   }, [searchParams, router]);

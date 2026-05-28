@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import posthog from "posthog-js";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,9 +21,79 @@ interface ApiKey {
 }
 
 export default function DeveloperSettingsPage() {
+  const { user, refreshUser } = useAuth();
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [username, setUsername] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [usernameSuccess, setUsernameSuccess] = useState(false);
+  const [savingUsername, setSavingUsername] = useState(false);
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  useEffect(() => {
+    if (user?.username) setUsername(user.username);
+  }, [user?.username]);
+
+  async function handleUsernameSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setUsernameError("");
+    setUsernameSuccess(false);
+
+    const candidate = username.trim().toLowerCase();
+    if (candidate === user?.username) return;
+
+    setSavingUsername(true);
+    try {
+      await api.patch("/api/auth/me/username", { username: candidate });
+      await refreshUser();
+      setUsernameSuccess(true);
+      setTimeout(() => setUsernameSuccess(false), 2500);
+    } catch (err: unknown) {
+      setUsernameError(err instanceof Error ? err.message : "Could not update username.");
+    } finally {
+      setSavingUsername(false);
+    }
+  }
+
+  async function handlePasswordSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setPasswordError("");
+    setPasswordSuccess(false);
+
+    if (newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords don't match.");
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      await api.patch("/api/auth/me/password", {
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordSuccess(true);
+      setTimeout(() => setPasswordSuccess(false), 2500);
+    } catch (err: unknown) {
+      setPasswordError(err instanceof Error ? err.message : "Could not update password.");
+    } finally {
+      setSavingPassword(false);
+    }
+  }
 
   const [showForm, setShowForm] = useState(false);
   const [keyValue, setKeyValue] = useState("");
@@ -52,11 +124,14 @@ export default function DeveloperSettingsPage() {
 
     try {
       await api.post("/api/api-keys", { key: keyValue, label: keyLabel });
+      posthog.capture("api_key_added", { label: keyLabel });
       setKeyValue("");
       setKeyLabel("");
       setShowForm(false);
       await fetchKeys();
+      await refreshUser();
     } catch (err: unknown) {
+      posthog.captureException(err);
       setError(err instanceof Error ? err.message : "Failed to add API key.");
     } finally {
       setAdding(false);
@@ -69,14 +144,19 @@ export default function DeveloperSettingsPage() {
     setError("");
     try {
       await api.delete(`/api/api-keys/${deleteTarget.id}`);
+      posthog.capture("api_key_deleted", { label: deleteTarget.label });
       setKeys((prev) => prev.filter((k) => k.id !== deleteTarget.id));
       setDeleteTarget(null);
+      await refreshUser();
     } catch (err: unknown) {
+      posthog.captureException(err);
       setError(err instanceof Error ? err.message : "Failed to delete API key.");
     } finally {
       setDeleting(false);
     }
   }
+
+  const usernameDirty = username.trim().toLowerCase() !== (user?.username || "");
 
   return (
     <div>
@@ -84,6 +164,105 @@ export default function DeveloperSettingsPage() {
       <p className="text-muted font-mono text-sm mb-2">
         Manage your account and API keys
       </p>
+      <Divider className="mx-0 my-8" />
+
+      <div className="mb-8">
+        <h2 className="font-display text-xl">Username</h2>
+        <p className="font-mono text-xs text-muted mt-1 mb-4">
+          Lowercase letters, numbers, hyphens, and underscores. 3 to 50 characters.
+        </p>
+
+        {usernameError && (
+          <div className="mb-4 p-3 border border-rust/20 bg-rust/5 font-mono text-xs text-rust">
+            {usernameError}
+          </div>
+        )}
+        {usernameSuccess && (
+          <div className="mb-4 p-3 border border-border bg-white/50 font-mono text-xs text-ink/80">
+            Username updated.
+          </div>
+        )}
+
+        <form onSubmit={handleUsernameSubmit} className="flex flex-col sm:flex-row gap-3 sm:items-end">
+          <div className="flex-1">
+            <Input
+              label="Username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
+              minLength={3}
+              maxLength={50}
+              placeholder="your-handle"
+              required
+            />
+          </div>
+          <Button type="submit" disabled={savingUsername || !usernameDirty}>
+            {savingUsername ? "Saving..." : "Save"}
+          </Button>
+        </form>
+      </div>
+
+      <Divider className="mx-0 my-8" />
+
+      <div className="mb-8">
+        <h2 className="font-display text-xl">Password</h2>
+        <p className="font-mono text-xs text-muted mt-1 mb-4">
+          Enter your current password to set a new one. Forgot it?{" "}
+          <Link href="/forgot-password" className="text-rust hover:text-rust-hover transition-colors">
+            Reset by email
+          </Link>
+          .
+        </p>
+
+        {passwordError && (
+          <div className="mb-4 p-3 border border-rust/20 bg-rust/5 font-mono text-xs text-rust">
+            {passwordError}
+          </div>
+        )}
+        {passwordSuccess && (
+          <div className="mb-4 p-3 border border-border bg-white/50 font-mono text-xs text-ink/80">
+            Password updated.
+          </div>
+        )}
+
+        <form onSubmit={handlePasswordSubmit} className="space-y-4 max-w-md">
+          <Input
+            label="Current password"
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
+          <Input
+            label="New password"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            autoComplete="new-password"
+            minLength={8}
+            required
+          />
+          <Input
+            label="Confirm new password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            autoComplete="new-password"
+            minLength={8}
+            required
+          />
+          <Button
+            type="submit"
+            disabled={
+              savingPassword || !currentPassword || !newPassword || !confirmPassword
+            }
+          >
+            {savingPassword ? "Updating..." : "Update password"}
+          </Button>
+        </form>
+      </div>
+
       <Divider className="mx-0 my-8" />
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">

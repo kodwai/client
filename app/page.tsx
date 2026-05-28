@@ -19,7 +19,7 @@ export default function Home() {
       .get("/api/auth/me")
       .then((user) => {
         if (user.user_type === "developer") {
-          router.push("/dev/challenges");
+          router.push(user.has_claude_api_key ? "/dev/challenges" : "/onboarding/claude-key");
         } else {
           router.push("/dashboard");
         }

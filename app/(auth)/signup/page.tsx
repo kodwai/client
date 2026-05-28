@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GitHubButton } from "@/components/ui/github-button";
 import { api } from "@/lib/api";
+import posthog from "posthog-js";
 
 type UserType = "developer" | "company" | null;
 
@@ -17,7 +18,6 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [company, setCompany] = useState("");
-  const [username, setUsername] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -35,12 +35,20 @@ export default function SignupPage() {
       };
       if (userType === "company") {
         body.organization_name = company;
-      } else {
-        body.username = username;
       }
-      await api.post("/api/auth/signup", body);
+      const data = await api.post("/api/auth/signup", body);
+      posthog.identify(data?.user?.id ?? email, {
+        email,
+        name,
+        user_type: userType!,
+      });
+      posthog.capture("user_signed_up", {
+        method: "email",
+        user_type: userType,
+      });
       router.push("/verify");
     } catch (err) {
+      posthog.captureException(err);
       setError(err instanceof Error ? err.message : "Signup failed");
     } finally {
       setLoading(false);
@@ -58,7 +66,7 @@ export default function SignupPage() {
         <div className="space-y-3">
           <button
             type="button"
-            onClick={() => setUserType("developer")}
+            onClick={() => { setUserType("developer"); posthog.capture("signup_user_type_selected", { user_type: "developer" }); }}
             className="w-full text-left bg-white/50 border border-border hover:border-l-2 hover:border-l-rust p-5 transition-colors group"
           >
             <div className="flex items-baseline gap-3">
@@ -76,7 +84,7 @@ export default function SignupPage() {
 
           <button
             type="button"
-            onClick={() => setUserType("company")}
+            onClick={() => { setUserType("company"); posthog.capture("signup_user_type_selected", { user_type: "company" }); }}
             className="w-full text-left bg-white/50 border border-border hover:border-l-2 hover:border-l-rust p-5 transition-colors group"
           >
             <div className="flex items-baseline gap-3">
@@ -145,18 +153,6 @@ export default function SignupPage() {
           onChange={(e) => setName(e.target.value)}
           required
         />
-
-        {userType === "developer" && (
-          <Input
-            label="Username"
-            type="text"
-            placeholder="janesmith"
-            value={username}
-            onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
-            required
-            minLength={3}
-          />
-        )}
 
         <Input
           label="Email"

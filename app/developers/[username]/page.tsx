@@ -7,6 +7,7 @@ import { formatDate } from "@/lib/date";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Divider } from "@/components/ui/divider";
+import { SocialLink } from "@/components/ui/social-link";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -31,6 +32,7 @@ interface Profile {
   github_url: string | null;
   linkedin_url: string | null;
   website_url: string | null;
+  x_url: string | null;
   total_score: number;
   challenges_completed: number;
   rank: number | null;
@@ -114,17 +116,12 @@ export default function PublicProfilePage() {
             </div>
           </div>
 
-          {(profile.github_url || profile.linkedin_url || profile.website_url) && (
-            <div className="flex gap-4 mt-4 pt-4 border-t border-border">
-              {profile.github_url && (
-                <a href={profile.github_url} target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-rust hover:text-rust-hover transition-colors">GitHub</a>
-              )}
-              {profile.linkedin_url && (
-                <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-rust hover:text-rust-hover transition-colors">LinkedIn</a>
-              )}
-              {profile.website_url && (
-                <a href={profile.website_url} target="_blank" rel="noopener noreferrer" className="font-mono text-xs text-rust hover:text-rust-hover transition-colors">Website</a>
-              )}
+          {(profile.github_url || profile.linkedin_url || profile.website_url || profile.x_url) && (
+            <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 pt-4 border-t border-border">
+              {profile.github_url && <SocialLink kind="github" href={profile.github_url} />}
+              {profile.x_url && <SocialLink kind="x" href={profile.x_url} />}
+              {profile.linkedin_url && <SocialLink kind="linkedin" href={profile.linkedin_url} />}
+              {profile.website_url && <SocialLink kind="website" href={profile.website_url} />}
             </div>
           )}
         </Card>

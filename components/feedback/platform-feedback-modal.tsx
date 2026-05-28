@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import posthog from "posthog-js";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -67,8 +68,14 @@ function PlatformFeedbackModal({ open, onClose }: PlatformFeedbackModalProps) {
         rating: rating || null,
         page_url: typeof window !== "undefined" ? window.location.pathname : null,
       });
+      posthog.capture("platform_feedback_submitted", {
+        category,
+        has_rating: rating > 0,
+        rating: rating || null,
+      });
       setSubmitted(true);
     } catch (err: any) {
+      posthog.captureException(err);
       setError(err.message || "Failed to submit feedback");
     } finally {
       setSubmitting(false);
