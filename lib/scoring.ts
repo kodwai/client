@@ -21,6 +21,7 @@ export interface ScoreBreakdownV2 {
   overall: number;
   late_penalty: number;
   leaderboard_eligible: boolean;
+  ineligible_reason?: "no_api_key" | "scoring_error" | null;
   baseline_lift: { beat: boolean; delta: number } | null;
   axes: AxisResult[];
   confidence?: "high" | "medium" | "low" | "none";

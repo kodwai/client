@@ -78,11 +78,17 @@ export function ScoreBreakdownV2View({ breakdown }: { breakdown: ScoreBreakdownV
       )}
       {!breakdown.leaderboard_eligible && (
         <Card className="mb-6">
-          <p className="font-mono text-xs text-muted">
-            This score isn&apos;t on the leaderboard — process scoring needs your Anthropic API key. Add it in{" "}
-            <Link href="/dev/settings" className="text-rust hover:text-rust-hover transition-colors">Settings</Link>{" "}
-            to unlock the full Direction score and leaderboard eligibility.
-          </p>
+          {breakdown.ineligible_reason === "scoring_error" ? (
+            <p className="font-mono text-xs text-muted">
+              This score isn&apos;t on the leaderboard yet. AI scoring didn&apos;t complete for this submission, likely a temporary error. Your Anthropic API key is connected, so just re-submit to get your full Direction score and leaderboard eligibility.
+            </p>
+          ) : (
+            <p className="font-mono text-xs text-muted">
+              This score isn&apos;t on the leaderboard. Process scoring needs your Anthropic API key. Add it in{" "}
+              <Link href="/dev/settings" className="text-rust hover:text-rust-hover transition-colors">Settings</Link>{" "}
+              to unlock the full Direction score and leaderboard eligibility.
+            </p>
+          )}
         </Card>
       )}
       {(breakdown.confidence === "none" || breakdown.confidence === "low") && (
