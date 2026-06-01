@@ -20,6 +20,14 @@ interface User {
   organization_id?: string;
   company_name?: string;
   has_claude_api_key: boolean;
+  // Free-submission entitlement. can_submit is false once a developer has spent
+  // their free submissions and has not connected their own key.
+  can_submit: boolean;
+  free_submissions_used: number;
+  free_submissions_limit: number;
+  free_submissions_remaining: number;
+  // First-login welcome intro: false until the developer has seen /dev/welcome.
+  welcomed: boolean;
 }
 
 interface AuthContextValue {
@@ -85,11 +93,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setToken(data.access_token);
       const me = await api.get("/api/auth/me");
       setUser(me);
-      if (me.user_type === "developer" && !me.has_claude_api_key) {
-        router.push("/onboarding/claude-key");
-      } else {
-        router.push(getHomeRoute(me.user_type));
-      }
+      // Developers go straight in — the in-app gate handles the API key once
+      // their free submissions run out.
+      router.push(getHomeRoute(me.user_type));
     },
     [router]
   );

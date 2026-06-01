@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Divider } from "@/components/ui/divider";
+import { ActiveChallengeBanner } from "@/components/active-challenge-banner";
 
 interface Submission {
   id: string;
@@ -46,6 +47,8 @@ export default function SubmissionsPage() {
         Track your challenge attempts and scores
       </p>
       <Divider className="mx-0 my-8" />
+
+      <ActiveChallengeBanner />
 
       {loading ? (
         <div className="flex items-center justify-center h-64">

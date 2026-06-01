@@ -27,11 +27,7 @@ function GitHubCallbackContent() {
           user_type: userType,
         });
         posthog.capture("github_auth_completed", { user_type: userType });
-        if (userType === "developer" && !data.user?.has_claude_api_key) {
-          router.push("/onboarding/claude-key");
-        } else {
-          router.push(userType === "developer" ? "/dev/challenges" : "/dashboard");
-        }
+        router.push(userType === "developer" ? "/dev/challenges" : "/dashboard");
       })
       .catch((err) => {
         posthog.captureException(err);

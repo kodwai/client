@@ -269,8 +269,9 @@ export default function DeveloperSettingsPage() {
         <div>
           <h2 className="font-display text-xl">Anthropic API Key</h2>
           <p className="font-mono text-xs text-muted mt-1">
-            Your API key is used for AI-powered scoring after you submit a challenge.
-            Without a key, you&apos;ll only get objective scoring (tests, code quality, time).
+            New developers get {user?.free_submissions_limit || 3} free submissions on us.
+            After that, connect your own key for unlimited submissions. It is used only to
+            score your own work and stays encrypted at rest.
           </p>
         </div>
         <Button
@@ -318,7 +319,7 @@ export default function DeveloperSettingsPage() {
       ) : keys.length === 0 ? (
         <Card>
           <p className="font-mono text-sm text-muted text-center py-4">
-            No API key configured. Add your Anthropic key to unlock full AI-powered scoring.
+            No API key connected. You&apos;re on the free tier. Connect a key for unlimited submissions.
           </p>
         </Card>
       ) : (
@@ -349,7 +350,7 @@ export default function DeveloperSettingsPage() {
         open={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         title="Delete API Key"
-        description={`Are you sure you want to delete "${deleteTarget?.label}"? Without an API key, you'll only get objective scoring on future submissions.`}
+        description={`Are you sure you want to delete "${deleteTarget?.label}"? Without a connected key you fall back to the free tier, and once those submissions are used up you'll need to reconnect a key to submit.`}
         confirmLabel="Delete"
         onConfirm={handleDelete}
         loading={deleting}

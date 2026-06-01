@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { Divider } from "@/components/ui/divider";
 import { PlatformFeedbackModal } from "@/components/feedback/platform-feedback-modal";
+import { ClaudeKeyGate } from "@/components/claude-key-gate";
 
 const navLinks = [
   { href: "/dev/challenges", label: "Challenges" },
@@ -143,24 +144,44 @@ function Sidebar({ open, onClose, onFeedback }: { open: boolean; onClose: () => 
 
 function DeveloperShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
 
-  // Guard: redirect company users to their dashboard
+  // First-time developers see the welcome intro once (server-tracked).
+  const needsWelcome =
+    !!user && user.user_type === "developer" && user.can_submit && !user.welcomed && pathname !== "/dev/welcome";
+
   useEffect(() => {
     if (loading || !user) return;
     if (user.user_type === "company") {
       router.push("/dashboard");
       return;
     }
-    if (!user.has_claude_api_key) {
-      router.replace("/onboarding/claude-key");
+    if (needsWelcome) {
+      router.replace("/dev/welcome");
     }
-  }, [loading, user, router]);
+  }, [loading, user, router, needsWelcome]);
 
-  if (!loading && user && (user.user_type === "company" || !user.has_claude_api_key)) {
+  if (!loading && user && user.user_type === "company") {
     return null;
+  }
+
+  // Developers who have spent their free submissions and have no own key are
+  // blocked behind a non-dismissable gate until they connect a key.
+  if (!loading && user && user.user_type === "developer" && !user.can_submit) {
+    return <ClaudeKeyGate />;
+  }
+
+  // While redirecting a first-time developer to the welcome intro, render nothing.
+  if (!loading && needsWelcome) {
+    return null;
+  }
+
+  // The welcome intro renders full-bleed, without the sidebar chrome.
+  if (!loading && user && user.user_type === "developer" && pathname === "/dev/welcome") {
+    return <>{children}</>;
   }
 
   return (

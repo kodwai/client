@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { formatDateTime, getTimeMs } from "@/lib/date";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
 import { Divider } from "@/components/ui/divider";
 import { ChallengeFeedbackForm } from "@/components/feedback/challenge-feedback-form";
 import { ScoreCard } from "@/components/score-card";
@@ -49,39 +51,50 @@ const statusVariant: Record<string, "success" | "info" | "warning" | "error"> = 
 
 export default function SubmissionDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [actionError, setActionError] = useState("");
 
   useEffect(() => {
-    async function fetchSubmission() {
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    let cancelled = false;
+    const TERMINAL = new Set(["scored", "error"]);
+
+    async function load() {
       try {
-        const data = await api.get(`/api/submissions/${id}`);
-        setSubmission(data);
+        return await api.get(`/api/submissions/${id}`);
       } catch {
-        setSubmission(null);
-      } finally {
-        setLoading(false);
+        return null;
       }
     }
-    let intervalId: ReturnType<typeof setInterval> | null = null;
 
-    fetchSubmission().then(() => {
-      // Only start polling if not already in a terminal state
+    load().then((data) => {
+      if (cancelled) return;
+      setSubmission(data);
+      setLoading(false);
+      // Don't poll a missing submission (404) or one already in a terminal state.
+      if (!data || TERMINAL.has(data.status)) return;
       intervalId = setInterval(async () => {
         try {
-          const data = await api.get(`/api/submissions/${id}`);
-          setSubmission(data);
-          if (data.status === "scored" || data.status === "error") {
-            if (intervalId) clearInterval(intervalId);
-          }
+          const fresh = await api.get(`/api/submissions/${id}`);
+          if (cancelled) return;
+          setSubmission(fresh);
+          if (TERMINAL.has(fresh.status) && intervalId) clearInterval(intervalId);
         } catch {
-          // ignore
+          // Stop polling on any error (e.g. the submission was deleted) instead of looping forever.
+          if (intervalId) clearInterval(intervalId);
         }
       }, 3000);
     });
 
-    return () => { if (intervalId) clearInterval(intervalId); };
+    return () => {
+      cancelled = true;
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [id]);
 
   if (loading) {
@@ -104,6 +117,23 @@ export default function SubmissionDetailPage() {
   }
 
   const timeMin = submission.time_taken_ms ? Math.round(submission.time_taken_ms / 60000) : null;
+  const isInProgress = submission.status === "in_progress";
+  // Mid-scoring submissions can't be removed (the server is still writing to them).
+  const canRemove = isInProgress || submission.status === "scored" || submission.status === "error";
+
+  async function handleRemove() {
+    setDeleting(true);
+    setActionError("");
+    try {
+      await api.delete(`/api/submissions/${id}`);
+      router.push("/dev/submissions");
+    } catch (err) {
+      // Close the confirm and surface why (e.g. 409 while it's still being scored).
+      setActionError(err instanceof Error ? err.message : "Could not remove this submission.");
+      setConfirmOpen(false);
+      setDeleting(false);
+    }
+  }
 
   return (
     <div>
@@ -111,11 +141,36 @@ export default function SubmissionDetailPage() {
         &larr; Back to submissions
       </Link>
 
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
-        <h1 className="font-display text-3xl">{submission.challenge_title}</h1>
-        <Badge variant={statusVariant[submission.status] || "info"}>{submission.status}</Badge>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <h1 className="font-display text-3xl">{submission.challenge_title}</h1>
+          <Badge variant={statusVariant[submission.status] || "info"}>{submission.status}</Badge>
+        </div>
+        {canRemove && (
+          <Button variant="secondary" onClick={() => setConfirmOpen(true)} className="flex-shrink-0">
+            {isInProgress ? "Stop challenge" : "Delete"}
+          </Button>
+        )}
       </div>
       <Divider className="mx-0 my-8" />
+
+      <Modal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        title={isInProgress ? "Stop this challenge?" : "Delete this submission?"}
+        description={
+          isInProgress
+            ? "This abandons your in-progress attempt and deletes it. You can start a new challenge afterwards. This can't be undone."
+            : "Permanently delete this submission. If it's your best score on a leaderboard, your next-best remaining submission takes its place. This can't be undone."
+        }
+        confirmLabel={isInProgress ? "Stop challenge" : "Delete"}
+        onConfirm={handleRemove}
+        loading={deleting}
+      />
+
+      {actionError && (
+        <div className="mb-6 p-3 border border-rust/20 bg-rust/5 font-mono text-xs text-rust">{actionError}</div>
+      )}
 
       {/* Summary stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">

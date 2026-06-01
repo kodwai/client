@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Divider } from "@/components/ui/divider";
+import { FreeSubmissionsBanner } from "@/components/free-submissions-banner";
+import { ActiveChallengeBanner } from "@/components/active-challenge-banner";
 
 interface Challenge {
   id: string;
@@ -103,6 +105,9 @@ export default function ChallengesPage() {
         Solve AI-agent coding challenges and climb the leaderboard
       </p>
       <Divider className="mx-0 my-8" />
+
+      <ActiveChallengeBanner />
+      <FreeSubmissionsBanner />
 
       {/* Difficulty pills */}
       {!loading && !hasFilters && (
