@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useCountUp } from "@/hooks/useCountUp";
+import { Celebration } from "@/components/celebration";
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { formatDateTime, getTimeMs } from "@/lib/date";
@@ -40,6 +42,7 @@ interface Submission {
   started_at: string;
   submitted_at: string | null;
   scored_at: string | null;
+  celebration?: { score: number; personal_best: boolean; new_badges: { slug: string; name: string; icon?: string | null; description?: string | null }[] } | null;
 }
 
 const statusVariant: Record<string, "success" | "info" | "warning" | "error"> = {
@@ -59,6 +62,20 @@ export default function SubmissionDetailPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [actionError, setActionError] = useState("");
+
+  const celebratedRef = useRef(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  useEffect(() => {
+    if (!submission || submission.status !== "scored" || !submission.celebration) return;
+    if (celebratedRef.current) return;
+    const key = `celebrated:${submission.id}`;
+    if (typeof window !== "undefined" && sessionStorage.getItem(key)) return;
+    celebratedRef.current = true;
+    if (typeof window !== "undefined") sessionStorage.setItem(key, "1");
+    setShowCelebration(true);
+  }, [submission]);
+
+  const animatedScore = useCountUp(submission?.status === "scored" ? (submission.score ?? 0) : 0);
 
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval> | null = null;
@@ -180,7 +197,7 @@ export default function SubmissionDetailPage() {
           <p className="font-display text-2xl">
             {submission.score != null ? (
               <span className={submission.score >= 70 ? "text-green-700" : submission.score >= 50 ? "text-amber-600" : "text-rust"}>
-                {submission.score.toFixed(0)}
+                {animatedScore.toFixed(0)}
               </span>
             ) : submission.status === "scoring" ? (
               <span className="text-muted">...</span>
@@ -209,6 +226,8 @@ export default function SubmissionDetailPage() {
           <p className="font-display text-xl capitalize">{submission.status}</p>
         </Card>
       </div>
+
+      {showCelebration && submission.celebration && <Celebration data={submission.celebration} />}
 
       {/* Score breakdown */}
       {submission.status === "scoring" && (
