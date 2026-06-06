@@ -29,11 +29,12 @@ const spaceMono = Space_Mono({
 export const metadata: Metadata = {
   title: "kodwai — AI-Agent Coding Challenges",
   description:
-    "Prove your AI-agent coding skills. Solve challenges on your own machine with Claude Code, Cursor, or any AI agent. Get scored, compete on leaderboards, build your profile.",
+    "Prove your AI-agent coding skills. Solve challenges on your own machine with Claude Code, Cursor, Codex, or any AI agent. Get scored, compete on leaderboards, build your profile.",
   keywords: [
     "AI coding challenges",
     "Claude Code",
     "Cursor",
+    "Codex",
     "AI coding agent",
     "developer leaderboard",
     "coding platform",
@@ -47,7 +48,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "kodwai — AI-Agent Coding Challenges",
     description:
-      "Solve AI-agent coding challenges on your own machine with Claude Code, Cursor, and more. Compete on leaderboards. Earn badges.",
+      "Solve AI-agent coding challenges on your own machine with Claude Code, Cursor, Codex, and more. Compete on leaderboards. Earn badges.",
     type: "website",
     siteName: "kodwai",
   },

@@ -62,6 +62,7 @@ export default function AdminLeaderboardPage() {
           <option value="">All agents</option>
           <option value="claude-code">Claude Code</option>
           <option value="cursor">Cursor</option>
+          <option value="codex">Codex</option>
         </select>
         <select value={category} onChange={(e) => setCategory(e.target.value)} className="px-3 py-2 border border-border bg-transparent font-mono text-sm">
           <option value="">All categories</option>

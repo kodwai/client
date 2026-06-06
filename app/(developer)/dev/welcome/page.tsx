@@ -36,7 +36,7 @@ export default function WelcomePage() {
         <div>
           <p className="font-mono text-sm sm:text-base text-muted leading-relaxed mb-6 sm:mb-8">
             kodwai is where developers prove their AI-agent coding skills.
-            Solve challenges using Claude Code or Cursor, get scored, and climb the leaderboard.
+            Solve challenges using Claude Code, Cursor, or Codex, get scored, and climb the leaderboard.
           </p>
           <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
             {[
@@ -63,7 +63,7 @@ export default function WelcomePage() {
           </div>
           <div className="p-4 sm:p-5 border-l-2 border-border">
             <p className="font-display text-base sm:text-lg mb-1">Choose your agent</p>
-            <p className="text-xs sm:text-sm text-muted">Claude Code or Cursor, you pick, we trace</p>
+            <p className="text-xs sm:text-sm text-muted">Claude Code, Cursor, or Codex — you pick, we trace</p>
           </div>
           <div className="p-4 sm:p-5 border-l-2 border-border">
             <p className="font-display text-base sm:text-lg mb-1">Code your solution</p>

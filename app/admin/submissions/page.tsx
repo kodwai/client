@@ -58,6 +58,7 @@ export default function AdminSubmissionsPage() {
           <option value="">All agents</option>
           <option value="claude-code">Claude Code</option>
           <option value="cursor">Cursor</option>
+          <option value="codex">Codex</option>
         </select>
       </div>
 

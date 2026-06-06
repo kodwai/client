@@ -14,6 +14,7 @@ const BADGE_IMAGES: Record<string, string> = {
   "polyglot": "/badges/polyglot.png",
   "claude-master": "/badges/claude-master.png",
   "cursor-pro": "/badges/cursor-pro.png",
+  "codex-pro": "/badges/codex-pro.png",
   "early-adopter": "/badges/early-adopter.png",
 };
 
@@ -31,6 +32,7 @@ const BADGE_DATA: Record<string, { name: string; description: string; icon: stri
   "polyglot": { name: "Polyglot", description: "Completed challenges in 3+ categories", icon: "globe" },
   "claude-master": { name: "Claude Master", description: "Scored 80+ on 5 challenges using Claude Code", icon: "brain" },
   "cursor-pro": { name: "Cursor Pro", description: "Scored 80+ on 5 challenges using Cursor", icon: "cursor" },
+  "codex-pro": { name: "Codex Pro", description: "Scored 80+ on 5 challenges using Codex", icon: "terminal" },
   "early-adopter": { name: "Early Adopter", description: "Joined kodwai in the first 30 days", icon: "clock" },
 };
 
@@ -48,6 +50,7 @@ const OG_DESCRIPTIONS: Record<string, string> = {
   "polyglot": "Conquered challenges across 3+ categories. Full-stack AI wielder.",
   "claude-master": "Mastered Claude Code across 5+ challenges. The AI whisperer.",
   "cursor-pro": "Mastered Cursor across 5+ challenges. Ship at lightspeed.",
+  "codex-pro": "Mastered Codex across 5+ challenges. Terminal-native and unstoppable.",
   "early-adopter": "Joined kodwai early — before everyone else figured out AI-agent coding matters.",
 };
 
