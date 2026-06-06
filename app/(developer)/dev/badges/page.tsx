@@ -41,6 +41,7 @@ const BADGE_IMAGES: Record<string, string> = {
   "polyglot": "/badges/polyglot.png",
   "claude-master": "/badges/claude-master.png",
   "cursor-pro": "/badges/cursor-pro.png",
+  "codex-pro": "/badges/codex-pro.png",
   "early-adopter": "/badges/early-adopter.png",
 };
 
@@ -74,7 +75,7 @@ export default function BadgesPage() {
     "first-blood": 1, "five-down": 2, "ten-strong": 3, "quarter-century": 4,
     "top-10": 1, "speed-demon": 2, "perfect-score": 3, "polyglot": 4,
     "streak-3": 1, "streak-7": 2, "streak-30": 3,
-    "claude-master": 1, "cursor-pro": 2, "early-adopter": 3,
+    "claude-master": 1, "cursor-pro": 2, "codex-pro": 3, "early-adopter": 4,
   };
 
   const grouped: Record<string, Badge[]> = {};
@@ -101,6 +102,7 @@ export default function BadgesPage() {
     "polyglot": "Completed AI-agent challenges across 3+ categories on @kodwai_com — backend, frontend, algorithms. Full stack AI wielder.",
     "claude-master": "Scored 80+ on 5 challenges using Claude Code on @kodwai_com. If Claude is the tool, I'm the craftsman.",
     "cursor-pro": "Scored 80+ on 5 challenges using Cursor on @kodwai_com. Cursor + me = shipping machine.",
+    "codex-pro": "Scored 80+ on 5 challenges using Codex on @kodwai_com. Terminal-native, fully agentic.",
     "early-adopter": "Early adopter on @kodwai_com — the platform that scores how well you use AI coding agents. The future of technical interviews is here.",
   };
 
