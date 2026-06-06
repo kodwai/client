@@ -27,6 +27,8 @@ export default function LeaderboardPage() {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [agent, setAgent] = useState("");
+  const [model, setModel] = useState("");
+  const [models, setModels] = useState<{ slug: string; display: string }[]>([]);
   const [category, setCategory] = useState("");
   const [categories, setCategories] = useState<CategoryCount[]>([]);
 
@@ -38,10 +40,15 @@ export default function LeaderboardPage() {
   }, []);
 
   useEffect(() => {
+    api.get("/api/leaderboard/models").then((d) => setModels(d || [])).catch(() => setModels([]));
+  }, []);
+
+  useEffect(() => {
     async function fetchData() {
       try {
         const params = new URLSearchParams();
         if (agent) params.set("agent", agent);
+        if (model) params.set("model", model);
         if (category) params.set("category", category);
         const qs = params.toString();
         const data = await api.get(`/api/leaderboard${qs ? `?${qs}` : ""}`);
@@ -54,7 +61,7 @@ export default function LeaderboardPage() {
     }
     setLoading(true);
     fetchData();
-  }, [agent, category]);
+  }, [agent, model, category]);
 
   // Build description based on filters
   let description = "See how you rank against other developers";
@@ -82,6 +89,16 @@ export default function LeaderboardPage() {
           <option value="claude-code">Claude Code</option>
           <option value="cursor">Cursor</option>
           <option value="codex">Codex</option>
+        </select>
+        <select
+          value={model}
+          onChange={(e) => setModel(e.target.value)}
+          className="px-3 py-2 border border-border bg-transparent font-mono text-sm"
+        >
+          <option value="">All models</option>
+          {models.map((m) => (
+            <option key={m.slug} value={m.slug}>{m.display}</option>
+          ))}
         </select>
         <select
           value={category}
