@@ -146,7 +146,7 @@ export default function ChallengeDetailPage() {
       <Card accent>
         <h2 className="font-display text-xl mb-2">Start this challenge</h2>
         <p className="font-mono text-xs text-muted mb-4">
-          Run this command in your terminal. You&apos;ll be asked to choose your AI agent (Claude Code or Cursor),
+          Run this command in your terminal. You&apos;ll be asked to choose your AI agent (Claude Code, Cursor, or Codex),
           then the problem statement and starter files will be downloaded to your machine.
         </p>
         <div className="flex items-center gap-2">

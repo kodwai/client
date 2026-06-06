@@ -81,6 +81,7 @@ export default function LeaderboardPage() {
           <option value="">All agents</option>
           <option value="claude-code">Claude Code</option>
           <option value="cursor">Cursor</option>
+          <option value="codex">Codex</option>
         </select>
         <select
           value={category}
