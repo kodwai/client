@@ -8,6 +8,7 @@ interface ShareData {
   analytical_score: number | null;
   strengths: string[];
   agent_used: string;
+  model_display: string | null;
   time_minutes: number | null;
   time_limit_minutes: number;
   username: string | null;
@@ -121,7 +122,7 @@ export function ScoreCardServer({ data, token }: { data: ShareData; token: strin
         <div className="flex items-center gap-6 py-3 border-t border-border">
           <div>
             <p className="font-mono text-[9px] uppercase tracking-widest text-muted">Agent</p>
-            <p className="font-mono text-xs mt-0.5">{data.agent_used}</p>
+            <p className="font-mono text-xs mt-0.5">{data.model_display ? `${data.model_display} · ` : ""}{data.agent_used}</p>
           </div>
           {data.time_minutes != null && (
             <div>

@@ -14,6 +14,7 @@ interface ShareData {
   analytical_score: number | null;
   strengths: string[];
   agent_used: string;
+  model_display: string | null;
   time_minutes: number | null;
   time_limit_minutes: number;
   username: string | null;

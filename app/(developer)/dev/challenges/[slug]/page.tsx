@@ -278,7 +278,7 @@ function ChallengeLeaderboard({ challengeId }: { challengeId: string }) {
             <span className="col-span-2 font-mono text-xs text-muted text-right">
               {e.time_taken_ms ? `${Math.round(e.time_taken_ms / 60000)}m` : "—"}
             </span>
-            <span className="col-span-2 font-mono text-[10px] text-muted text-right uppercase">{e.agent_used || "—"}</span>
+            <span className="col-span-2 font-mono text-[10px] text-muted text-right uppercase">{e.agent_used ? `${e.model_display ? `${e.model_display} · ` : ""}${e.agent_used}` : "—"}</span>
           </div>
         ))}
       </div>
