@@ -33,6 +33,7 @@ interface Submission {
   challenge_time_limit_minutes: number | null;
   status: string;
   agent_used: string | null;
+  model_display?: string | null;
   score: number | null;
   score_breakdown: Record<string, unknown> | null;
   time_taken_ms: number | null;
@@ -201,7 +202,7 @@ export default function SubmissionDetailPage() {
         </Card>
         <Card>
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-1">Agent</p>
-          <p className="font-display text-xl">{submission.agent_used || "—"}</p>
+          <p className="font-display text-xl">{submission.agent_used ? `${submission.model_display ? `${submission.model_display} · ` : ""}${submission.agent_used}` : "—"}</p>
         </Card>
         <Card>
           <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-1">Status</p>

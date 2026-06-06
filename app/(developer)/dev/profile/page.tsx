@@ -43,6 +43,7 @@ interface Submission {
   id: string;
   score: number;
   agent_used: string;
+  model_display?: string | null;
   challenge_title: string;
   challenge_slug: string;
   difficulty: string;
@@ -206,7 +207,7 @@ export default function ProfilePage() {
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant={difficultyVariant[s.difficulty] || "info"}>{s.difficulty}</Badge>
                       {s.agent_used && (
-                        <span className="font-mono text-[10px] uppercase tracking-widest text-muted">{s.agent_used}</span>
+                        <span className="font-mono text-[10px] uppercase tracking-widest text-muted">{s.model_display ? `${s.model_display} · ` : ""}{s.agent_used}</span>
                       )}
                     </div>
                   </div>
