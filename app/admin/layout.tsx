@@ -15,6 +15,7 @@ const navLinks = [
   { href: "/admin/submissions", label: "Submissions" },
   { href: "/admin/leaderboard", label: "Leaderboard" },
   { href: "/admin/badges", label: "Badges" },
+  { href: "/admin/feature-flags", label: "Feature Flags" },
   { href: "/admin/feedback", label: "Feedback" },
   { href: "/admin/blog", label: "Blog Posts" },
   { href: "/admin/blog/categories", label: "Blog Categories" },
