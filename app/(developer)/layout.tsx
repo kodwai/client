@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { FeatureFlagsProvider } from "@/lib/feature-flags";
 import { Divider } from "@/components/ui/divider";
 import { PlatformFeedbackModal } from "@/components/feedback/platform-feedback-modal";
 import { ClaudeKeyGate } from "@/components/claude-key-gate";
@@ -199,7 +200,9 @@ function DeveloperShell({ children }: { children: React.ReactNode }) {
 export default function DeveloperLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
-      <DeveloperShell>{children}</DeveloperShell>
+      <FeatureFlagsProvider>
+        <DeveloperShell>{children}</DeveloperShell>
+      </FeatureFlagsProvider>
     </AuthProvider>
   );
 }

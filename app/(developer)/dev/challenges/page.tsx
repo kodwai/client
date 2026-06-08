@@ -3,12 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Divider } from "@/components/ui/divider";
 import { FreeSubmissionsBanner } from "@/components/free-submissions-banner";
 import { ActiveChallengeBanner } from "@/components/active-challenge-banner";
+import { SprintCountdown } from "@/components/sprint-countdown";
 
 interface Challenge {
   id: string;
@@ -37,7 +39,10 @@ const SORT_OPTIONS = [
 ] as const;
 
 export default function ChallengesPage() {
+  const { isEnabled } = useFeatureFlags();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [daily, setDaily] = useState<{ challenge: Challenge; completed_today: boolean } | null>(null);
+  const [sprint, setSprint] = useState<{ challenge: { title: string; slug: string; difficulty: string; category: string }; ends_at: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState("");
@@ -65,6 +70,14 @@ export default function ChallengesPage() {
     const timer = setTimeout(fetchChallenges, 200);
     return () => clearTimeout(timer);
   }, [search, difficulty, category, sort]);
+
+  useEffect(() => {
+    api.get("/api/challenges/daily").then(setDaily).catch(() => setDaily(null));
+  }, []);
+
+  useEffect(() => {
+    api.get("/api/sprint/current").then(setSprint).catch(() => setSprint(null));
+  }, []);
 
   const stats = useMemo(() => {
     const cats = new Map<string, number>();
@@ -108,6 +121,63 @@ export default function ChallengesPage() {
 
       <ActiveChallengeBanner />
       <FreeSubmissionsBanner />
+
+      {/* Challenge of the day */}
+      {daily && (
+        <Card className="mb-8 border-rust/30 hover:border-rust/50 transition-colors">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-rust">
+            ★ Challenge of the Day
+          </span>
+          <h2 className="font-display text-2xl mt-2 mb-3">{daily.challenge.title}</h2>
+          <div className="flex items-center gap-2 mb-4">
+            <Badge variant={difficultyVariant[daily.challenge.difficulty] || "info"}>
+              {daily.challenge.difficulty}
+            </Badge>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
+              {daily.challenge.category}
+            </span>
+            <span className="font-mono text-xs text-muted">
+              {daily.challenge.time_limit_minutes} min
+            </span>
+          </div>
+          {daily.completed_today ? (
+            <span className="font-mono text-sm text-green-600">✓ Completed today</span>
+          ) : (
+            <Link
+              href={`/dev/challenges/${daily.challenge.slug}`}
+              className="font-mono text-sm text-rust hover:text-rust-hover transition-colors"
+            >
+              Start challenge →
+            </Link>
+          )}
+        </Card>
+      )}
+
+      {isEnabled("weekly_sprint") && sprint && (
+        <Card className="mb-8 border-rust/30 hover:border-rust/50 transition-colors">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-rust">
+            ⚡ Weekly Sprint
+          </span>
+          <h2 className="font-display text-2xl mt-2 mb-3">{sprint.challenge.title}</h2>
+          <div className="flex items-center gap-2 mb-4">
+            <Badge variant={difficultyVariant[sprint.challenge.difficulty] || "info"}>
+              {sprint.challenge.difficulty}
+            </Badge>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
+              {sprint.challenge.category}
+            </span>
+            <span className="font-mono text-xs text-muted">
+              Ends in <SprintCountdown endsAt={sprint.ends_at} />
+            </span>
+          </div>
+          <Link
+            href="/dev/sprint"
+            className="font-mono text-sm text-rust hover:text-rust-hover transition-colors"
+          >
+            View sprint →
+          </Link>
+        </Card>
+      )}
 
       {/* Difficulty pills */}
       {!loading && !hasFilters && (

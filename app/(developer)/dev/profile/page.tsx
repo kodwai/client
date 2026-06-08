@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { formatDate } from "@/lib/date";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +28,16 @@ interface Profile {
   challenges_completed: number;
   rank: number | null;
   streak_days: number;
+  direction_rating: number;
   recent_submissions?: Submission[];
+}
+
+function titleCaseKey(key: string): string {
+  return key
+    .replace(/-/g, " ")
+    .split(" ")
+    .map((word) => (word ? word.charAt(0).toUpperCase() + word.slice(1) : word))
+    .join(" ");
 }
 
 function normalizeXHandle(raw: string): string | null {
@@ -57,7 +67,9 @@ const difficultyVariant: Record<string, "success" | "warning" | "error"> = {
 };
 
 export default function ProfilePage() {
+  const { isEnabled } = useFeatureFlags();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [skills, setSkills] = useState<{ category: { key: string; rating: number }[]; model: { key: string; rating: number }[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -81,6 +93,10 @@ export default function ProfilePage() {
       })
       .catch(() => setProfile(null))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    api.get("/api/developers/me/skills").then(setSkills).catch(() => setSkills(null));
   }, []);
 
   async function handleSave() {
@@ -128,6 +144,14 @@ export default function ProfilePage() {
         </Button>
       </div>
       <p className="text-muted font-mono text-sm mb-2">Your public developer profile</p>
+      {isEnabled("wrapped") && (
+        <Link
+          href="/dev/wrapped"
+          className="font-mono text-sm text-rust hover:text-rust-hover transition-colors inline-block"
+        >
+          ✨ Your kodwai Wrapped &rarr;
+        </Link>
+      )}
       <Divider className="mx-0 my-8" />
 
       {/* Header card */}
@@ -144,7 +168,11 @@ export default function ProfilePage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-6">
+          <div className="text-center">
+            <p className="font-display text-2xl">{profile.direction_rating ?? 1000}</p>
+            <p className="font-mono text-[10px] text-muted uppercase tracking-wide">Direction</p>
+          </div>
           <div className="text-center">
             <p className="font-display text-2xl">{profile.challenges_completed}</p>
             <p className="font-mono text-[10px] text-muted uppercase tracking-wide">Challenges</p>
@@ -193,6 +221,41 @@ export default function ProfilePage() {
 
       {/* Badges */}
       <ProfileBadges />
+
+      {/* Mastery */}
+      {skills && (skills.category.length > 0 || skills.model.length > 0) && (
+        <div className="mb-8">
+          <h2 className="font-display text-xl mb-4">Mastery</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {skills.category.length > 0 && (
+              <Card>
+                <p className="font-mono text-[10px] text-muted uppercase tracking-wide mb-3">By category</p>
+                <div>
+                  {skills.category.slice(0, 5).map((s) => (
+                    <div key={s.key} className="flex items-center justify-between py-2 border-b border-border last:border-b-0">
+                      <span className="font-mono text-sm">{titleCaseKey(s.key)}</span>
+                      <span className="font-display text-base">{s.rating}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+            {skills.model.length > 0 && (
+              <Card>
+                <p className="font-mono text-[10px] text-muted uppercase tracking-wide mb-3">By model</p>
+                <div>
+                  {skills.model.slice(0, 5).map((s) => (
+                    <div key={s.key} className="flex items-center justify-between py-2 border-b border-border last:border-b-0">
+                      <span className="font-mono text-sm">{s.key}</span>
+                      <span className="font-display text-base">{s.rating}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Recent submissions */}
       <h2 className="font-display text-xl mb-4">Recent Submissions</h2>
