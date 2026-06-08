@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { formatDate } from "@/lib/date";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +67,7 @@ const difficultyVariant: Record<string, "success" | "warning" | "error"> = {
 };
 
 export default function ProfilePage() {
+  const { isEnabled } = useFeatureFlags();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [skills, setSkills] = useState<{ category: { key: string; rating: number }[]; model: { key: string; rating: number }[] } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -142,12 +144,14 @@ export default function ProfilePage() {
         </Button>
       </div>
       <p className="text-muted font-mono text-sm mb-2">Your public developer profile</p>
-      <Link
-        href="/dev/wrapped"
-        className="font-mono text-sm text-rust hover:text-rust-hover transition-colors inline-block"
-      >
-        ✨ Your kodwai Wrapped &rarr;
-      </Link>
+      {isEnabled("wrapped") && (
+        <Link
+          href="/dev/wrapped"
+          className="font-mono text-sm text-rust hover:text-rust-hover transition-colors inline-block"
+        >
+          ✨ Your kodwai Wrapped &rarr;
+        </Link>
+      )}
       <Divider className="mx-0 my-8" />
 
       {/* Header card */}

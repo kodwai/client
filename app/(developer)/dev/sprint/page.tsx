@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Divider } from "@/components/ui/divider";
@@ -48,6 +49,7 @@ const difficultyVariant: Record<string, "success" | "info" | "warning" | "error"
 };
 
 export default function SprintPage() {
+  const { isEnabled, loading: flagsLoading } = useFeatureFlags();
   const [data, setData] = useState<SprintData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -65,7 +67,12 @@ export default function SprintPage() {
       <p className="text-muted font-mono text-sm">One challenge. One week. Climb the board.</p>
       <Divider className="mx-0 my-8" />
 
-      {loading ? (
+      {!flagsLoading && !isEnabled("weekly_sprint") ? (
+        <Card className="text-center py-12">
+          <p className="font-display text-xl mb-2">Weekly Sprint is unavailable</p>
+          <p className="font-mono text-sm text-muted">This feature is currently turned off.</p>
+        </Card>
+      ) : loading ? (
         <p className="font-mono text-sm text-muted">Loading…</p>
       ) : !data ? (
         <Card className="text-center py-12">

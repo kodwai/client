@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,7 @@ const SORT_OPTIONS = [
 ] as const;
 
 export default function ChallengesPage() {
+  const { isEnabled } = useFeatureFlags();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [daily, setDaily] = useState<{ challenge: Challenge; completed_today: boolean } | null>(null);
   const [sprint, setSprint] = useState<{ challenge: { title: string; slug: string; difficulty: string; category: string }; ends_at: string } | null>(null);
@@ -151,7 +153,7 @@ export default function ChallengesPage() {
         </Card>
       )}
 
-      {sprint && (
+      {isEnabled("weekly_sprint") && sprint && (
         <Card className="mb-8 border-rust/30 hover:border-rust/50 transition-colors">
           <span className="font-mono text-[10px] uppercase tracking-widest text-rust">
             ⚡ Weekly Sprint

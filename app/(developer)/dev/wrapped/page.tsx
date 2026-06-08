@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { useFeatureFlags } from "@/lib/feature-flags";
 import { Card } from "@/components/ui/card";
 
 interface Wrapped {
@@ -52,6 +53,7 @@ function StatCard({
 }
 
 export default function WrappedPage() {
+  const { isEnabled, loading: flagsLoading } = useFeatureFlags();
   const [data, setData] = useState<Wrapped | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -62,6 +64,15 @@ export default function WrappedPage() {
       .catch(() => setData(null))
       .finally(() => setLoading(false));
   }, []);
+
+  if (!flagsLoading && !isEnabled("wrapped")) {
+    return (
+      <Card className="text-center py-12">
+        <p className="font-display text-xl">kodwai Wrapped is unavailable</p>
+        <p className="font-mono text-sm text-muted mt-2">This feature is currently turned off.</p>
+      </Card>
+    );
+  }
 
   if (loading) {
     return (
