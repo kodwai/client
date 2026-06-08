@@ -142,6 +142,12 @@ export default function ProfilePage() {
         </Button>
       </div>
       <p className="text-muted font-mono text-sm mb-2">Your public developer profile</p>
+      <Link
+        href="/dev/wrapped"
+        className="font-mono text-sm text-rust hover:text-rust-hover transition-colors inline-block"
+      >
+        ✨ Your kodwai Wrapped &rarr;
+      </Link>
       <Divider className="mx-0 my-8" />
 
       {/* Header card */}
