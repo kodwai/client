@@ -26,6 +26,18 @@ interface EarnedBadge {
   earned_at: string;
 }
 
+interface BadgeProgress {
+  slug: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: string;
+  earned: boolean;
+  progressable: boolean;
+  current: number;
+  target: number;
+}
+
 // Badge slug -> image path mapping
 const BADGE_IMAGES: Record<string, string> = {
   "first-blood": "/badges/first-blood.png",
@@ -55,6 +67,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 export default function BadgesPage() {
   const [allBadges, setAllBadges] = useState<Badge[]>([]);
   const [myBadges, setMyBadges] = useState<EarnedBadge[]>([]);
+  const [progress, setProgress] = useState<BadgeProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [shareToast, setShareToast] = useState<string | null>(null);
 
@@ -62,13 +75,16 @@ export default function BadgesPage() {
     Promise.all([
       api.get("/api/badges").catch(() => []),
       api.get("/api/badges/me").catch(() => []),
-    ]).then(([all, mine]) => {
+      api.get("/api/badges/progress").catch(() => []),
+    ]).then(([all, mine, prog]) => {
       setAllBadges(all);
       setMyBadges(mine);
+      setProgress(prog);
     }).finally(() => setLoading(false));
   }, []);
 
   const earnedSlugs = new Set(myBadges.map((b) => b.slug));
+  const progressBySlug = new Map(progress.map((p) => [p.slug, p]));
 
   // Define display order per slug
   const SORT_ORDER: Record<string, number> = {
@@ -156,6 +172,12 @@ export default function BadgesPage() {
             {badges.map((badge) => {
               const earned = earnedSlugs.has(badge.slug);
               const earnedBadge = myBadges.find((b) => b.slug === badge.slug);
+              const prog = progressBySlug.get(badge.slug);
+              const showProgress =
+                !earned && prog?.progressable && prog.target > 0;
+              const progressPct = showProgress
+                ? Math.min(prog!.current / prog!.target, 1) * 100
+                : 0;
               return (
                 <div
                   key={badge.id}
@@ -202,6 +224,18 @@ export default function BadgesPage() {
                           LinkedIn
                         </button>
                       </div>
+                    </div>
+                  ) : showProgress ? (
+                    <div>
+                      <div className="h-1 w-full bg-border overflow-hidden mb-1.5">
+                        <div
+                          className="h-full bg-rust transition-all"
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                      <p className="font-mono text-[10px] text-muted">
+                        {prog!.current} / {prog!.target}
+                      </p>
                     </div>
                   ) : (
                     <p className="font-mono text-xs text-muted/70">
