@@ -38,6 +38,7 @@ const SORT_OPTIONS = [
 
 export default function ChallengesPage() {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [daily, setDaily] = useState<{ challenge: Challenge; completed_today: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState("");
@@ -65,6 +66,10 @@ export default function ChallengesPage() {
     const timer = setTimeout(fetchChallenges, 200);
     return () => clearTimeout(timer);
   }, [search, difficulty, category, sort]);
+
+  useEffect(() => {
+    api.get("/api/challenges/daily").then(setDaily).catch(() => setDaily(null));
+  }, []);
 
   const stats = useMemo(() => {
     const cats = new Map<string, number>();
@@ -108,6 +113,37 @@ export default function ChallengesPage() {
 
       <ActiveChallengeBanner />
       <FreeSubmissionsBanner />
+
+      {/* Challenge of the day */}
+      {daily && (
+        <Card className="mb-8 border-rust/30 hover:border-rust/50 transition-colors">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-rust">
+            ★ Challenge of the Day
+          </span>
+          <h2 className="font-display text-2xl mt-2 mb-3">{daily.challenge.title}</h2>
+          <div className="flex items-center gap-2 mb-4">
+            <Badge variant={difficultyVariant[daily.challenge.difficulty] || "info"}>
+              {daily.challenge.difficulty}
+            </Badge>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
+              {daily.challenge.category}
+            </span>
+            <span className="font-mono text-xs text-muted">
+              {daily.challenge.time_limit_minutes} min
+            </span>
+          </div>
+          {daily.completed_today ? (
+            <span className="font-mono text-sm text-green-600">✓ Completed today</span>
+          ) : (
+            <Link
+              href={`/dev/challenges/${daily.challenge.slug}`}
+              className="font-mono text-sm text-rust hover:text-rust-hover transition-colors"
+            >
+              Start challenge →
+            </Link>
+          )}
+        </Card>
+      )}
 
       {/* Difficulty pills */}
       {!loading && !hasFilters && (
