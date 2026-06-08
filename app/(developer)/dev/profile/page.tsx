@@ -27,6 +27,7 @@ interface Profile {
   challenges_completed: number;
   rank: number | null;
   streak_days: number;
+  direction_rating: number;
   recent_submissions?: Submission[];
 }
 
@@ -144,7 +145,11 @@ export default function ProfilePage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-6">
+          <div className="text-center">
+            <p className="font-display text-2xl">{profile.direction_rating ?? 1000}</p>
+            <p className="font-mono text-[10px] text-muted uppercase tracking-wide">Direction</p>
+          </div>
           <div className="text-center">
             <p className="font-display text-2xl">{profile.challenges_completed}</p>
             <p className="font-mono text-[10px] text-muted uppercase tracking-wide">Challenges</p>
