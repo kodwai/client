@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Divider } from "@/components/ui/divider";
 import { FreeSubmissionsBanner } from "@/components/free-submissions-banner";
 import { ActiveChallengeBanner } from "@/components/active-challenge-banner";
+import { SprintCountdown } from "@/components/sprint-countdown";
 
 interface Challenge {
   id: string;
@@ -39,6 +40,7 @@ const SORT_OPTIONS = [
 export default function ChallengesPage() {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [daily, setDaily] = useState<{ challenge: Challenge; completed_today: boolean } | null>(null);
+  const [sprint, setSprint] = useState<{ challenge: { title: string; slug: string; difficulty: string; category: string }; ends_at: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState("");
@@ -69,6 +71,10 @@ export default function ChallengesPage() {
 
   useEffect(() => {
     api.get("/api/challenges/daily").then(setDaily).catch(() => setDaily(null));
+  }, []);
+
+  useEffect(() => {
+    api.get("/api/sprint/current").then(setSprint).catch(() => setSprint(null));
   }, []);
 
   const stats = useMemo(() => {
@@ -142,6 +148,32 @@ export default function ChallengesPage() {
               Start challenge →
             </Link>
           )}
+        </Card>
+      )}
+
+      {sprint && (
+        <Card className="mb-8 border-rust/30 hover:border-rust/50 transition-colors">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-rust">
+            ⚡ Weekly Sprint
+          </span>
+          <h2 className="font-display text-2xl mt-2 mb-3">{sprint.challenge.title}</h2>
+          <div className="flex items-center gap-2 mb-4">
+            <Badge variant={difficultyVariant[sprint.challenge.difficulty] || "info"}>
+              {sprint.challenge.difficulty}
+            </Badge>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
+              {sprint.challenge.category}
+            </span>
+            <span className="font-mono text-xs text-muted">
+              Ends in <SprintCountdown endsAt={sprint.ends_at} />
+            </span>
+          </div>
+          <Link
+            href="/dev/sprint"
+            className="font-mono text-sm text-rust hover:text-rust-hover transition-colors"
+          >
+            View sprint →
+          </Link>
         </Card>
       )}
 
