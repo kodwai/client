@@ -14,6 +14,7 @@ interface Wrapped {
   submissions: number;
   best_score: number | null;
   direction_rating: number;
+  efficiency_rating: number;
   streak_days: number;
   rank: number | null;
   badges_count: number;
@@ -130,6 +131,7 @@ export default function WrappedPage() {
 
       {/* Stat grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+        <StatCard label="Efficiency Rating" value={data.efficiency_rating} />
         <StatCard label="Challenges Completed" value={data.challenges_completed} />
         <StatCard
           label="Best Score"

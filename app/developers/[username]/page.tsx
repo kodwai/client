@@ -8,6 +8,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Divider } from "@/components/ui/divider";
 import { SocialLink } from "@/components/ui/social-link";
+import { TierBadge } from "@/components/tier-badge";
+import { MasteryRadar } from "@/components/mastery-radar";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -41,12 +43,23 @@ interface Profile {
   skills: string[];
   badges: any[];
   recent_submissions: any[];
+  direction_rating?: number;
+  efficiency_rating?: number;
+  tier?: { key: string; name: string; color: string; next_name?: string | null; next_at?: number | null; progress?: number } | null;
+  xp?: number;
+  level?: { level: number; xp: number; level_floor: number; next_level_xp: number; progress: number };
+}
+
+interface Skills {
+  category: { key: string; rating: number }[];
+  model: { key: string; rating: number }[];
 }
 
 export default function PublicProfilePage() {
   const params = useParams();
   const username = params.username as string;
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [skills, setSkills] = useState<Skills | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,6 +68,13 @@ export default function PublicProfilePage() {
       .then(setProfile)
       .catch(() => setProfile(null))
       .finally(() => setLoading(false));
+  }, [username]);
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/developers/${username}/skills`)
+      .then((r) => r.ok ? r.json() : null)
+      .then(setSkills)
+      .catch(() => setSkills(null));
   }, [username]);
 
   if (loading) {
@@ -93,11 +113,43 @@ export default function PublicProfilePage() {
             <div>
               <p className="font-display text-xl">{profile.name}</p>
               <p className="font-mono text-sm text-muted">@{profile.username}</p>
+              {profile.tier && (
+                <div className="mt-1">
+                  <TierBadge tier={profile.tier} />
+                </div>
+              )}
               {profile.bio && <p className="font-mono text-xs text-muted mt-1">{profile.bio}</p>}
             </div>
           </div>
 
+          {profile.level && (
+            <div className="mb-4 pb-4 border-b border-border">
+              <div className="flex items-baseline justify-between mb-2">
+                <p className="font-mono text-[10px] text-muted uppercase tracking-wide">
+                  Level <span className="font-display text-base text-ink">{profile.level.level}</span>
+                </p>
+                <p className="font-mono text-[10px] text-muted">
+                  {profile.level.xp} XP · next {profile.level.next_level_xp}
+                </p>
+              </div>
+              <div className="h-1.5 bg-cream-dark/30 border border-border overflow-hidden">
+                <div
+                  className="h-full bg-rust"
+                  style={{ width: `${Math.min(100, Math.max(0, profile.level.progress * 100))}%` }}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+            <div className="text-center">
+              <p className="font-display text-2xl">{profile.direction_rating ?? 1000}</p>
+              <p className="font-mono text-[10px] text-muted uppercase tracking-wide">Direction</p>
+            </div>
+            <div className="text-center">
+              <p className="font-display text-2xl">{profile.efficiency_rating ?? 1000}</p>
+              <p className="font-mono text-[10px] text-muted uppercase tracking-wide">Efficiency</p>
+            </div>
             <div className="text-center">
               <p className="font-display text-2xl">{profile.challenges_completed}</p>
               <p className="font-mono text-[10px] text-muted uppercase tracking-wide">Challenges</p>
@@ -125,6 +177,16 @@ export default function PublicProfilePage() {
             </div>
           )}
         </Card>
+
+        {/* Mastery */}
+        {skills && skills.category.length > 0 && (
+          <Card className="mb-6">
+            <p className="font-mono text-[10px] text-muted uppercase tracking-wide mb-3">Mastery · by category</p>
+            <div className="flex justify-center">
+              <MasteryRadar categories={skills.category} />
+            </div>
+          </Card>
+        )}
 
         {/* Badges */}
         {profile.badges?.length > 0 && (

@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { useFeatureFlags } from "@/lib/feature-flags";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Divider } from "@/components/ui/divider";
 import { FreeSubmissionsBanner } from "@/components/free-submissions-banner";
@@ -26,6 +27,18 @@ interface Challenge {
   avg_score: number | null;
 }
 
+interface Quest {
+  key: string;
+  scope: string;
+  title: string;
+  description: string;
+  target: number;
+  current: number;
+  reward_xp: number;
+  completed: boolean;
+  claimed: boolean;
+}
+
 const difficultyVariant: Record<string, "success" | "info" | "warning" | "error"> = {
   easy: "success",
   medium: "warning",
@@ -43,6 +56,7 @@ export default function ChallengesPage() {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [daily, setDaily] = useState<{ challenge: Challenge; completed_today: boolean } | null>(null);
   const [sprint, setSprint] = useState<{ challenge: { title: string; slug: string; difficulty: string; category: string }; ends_at: string } | null>(null);
+  const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState("");
@@ -78,6 +92,20 @@ export default function ChallengesPage() {
   useEffect(() => {
     api.get("/api/sprint/current").then(setSprint).catch(() => setSprint(null));
   }, []);
+
+  useEffect(() => {
+    api.get("/api/quests").then(setQuests).catch(() => setQuests([]));
+  }, []);
+
+  async function claimQuest(key: string) {
+    try {
+      await api.post("/api/quests/" + key + "/claim", {});
+      const data = await api.get("/api/quests");
+      setQuests(data);
+    } catch {
+      // ignore
+    }
+  }
 
   const stats = useMemo(() => {
     const cats = new Map<string, number>();
@@ -176,6 +204,55 @@ export default function ChallengesPage() {
           >
             View sprint →
           </Link>
+        </Card>
+      )}
+
+      {/* Quests */}
+      {quests.length > 0 && (
+        <Card className="mb-8">
+          <h2 className="font-display text-xl mb-4">Quests</h2>
+          {(["daily", "weekly"] as const).map((scope) => {
+            const scoped = quests.filter((q) => q.scope === scope);
+            if (scoped.length === 0) return null;
+            return (
+              <div key={scope} className="mb-6 last:mb-0">
+                <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-3">
+                  {scope}
+                </p>
+                <div className="space-y-3">
+                  {scoped.map((q) => {
+                    const pct = q.target > 0 ? Math.min(100, (q.current / q.target) * 100) : 0;
+                    return (
+                      <div
+                        key={q.key}
+                        className="flex items-center gap-4 py-2 border-b border-border last:border-b-0"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-display text-sm">{q.title}</p>
+                          <p className="font-mono text-xs text-muted mb-2">{q.description}</p>
+                          <div className="h-1.5 bg-cream-dark/30 border border-border overflow-hidden">
+                            <div className="h-full bg-rust" style={{ width: `${pct}%` }} />
+                          </div>
+                          <p className="font-mono text-[10px] text-rust mt-1">+{q.reward_xp} XP</p>
+                        </div>
+                        <div className="flex-shrink-0 text-right">
+                          {q.completed && !q.claimed ? (
+                            <Button onClick={() => claimQuest(q.key)}>Claim</Button>
+                          ) : q.claimed ? (
+                            <span className="font-mono text-xs text-green-600">Claimed ✓</span>
+                          ) : (
+                            <span className="font-mono text-xs text-muted">
+                              {q.current}/{q.target}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </Card>
       )}
 

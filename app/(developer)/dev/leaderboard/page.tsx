@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Divider } from "@/components/ui/divider";
+import { TierBadge } from "@/components/tier-badge";
 
 interface LeaderboardEntry {
   id: string;
@@ -15,6 +16,8 @@ interface LeaderboardEntry {
   challenges_completed: number;
   preferred_agent: string | null;
   rank: number;
+  direction_rating?: number;
+  tier?: { key: string; name: string; color: string; next_name?: string | null; next_at?: number | null; progress?: number } | null;
 }
 
 interface CategoryCount {
@@ -150,7 +153,10 @@ export default function LeaderboardPage() {
                     {entry.rank <= 3 ? <RankMedal rank={entry.rank} /> : <span className="font-mono text-sm text-muted">#{entry.rank}</span>}
                   </span>
                   <div className="col-span-5">
-                    <p className="font-display text-sm">{entry.name} {isMe && <span className="font-mono text-[10px] text-rust">(you)</span>}</p>
+                    <p className="font-display text-sm flex items-center gap-2">
+                      <span>{entry.name} {isMe && <span className="font-mono text-[10px] text-rust">(you)</span>}</span>
+                      <TierBadge tier={entry.tier} />
+                    </p>
                     <p className="font-mono text-xs text-muted">@{entry.username}</p>
                   </div>
                   <span className="col-span-2 font-display text-sm text-right">{entry.total_score?.toFixed(0) || "—"}</span>
@@ -172,7 +178,10 @@ export default function LeaderboardPage() {
                       <div className="flex items-center gap-3">
                         {entry.rank <= 3 ? <RankMedal rank={entry.rank} /> : <span className="font-mono text-sm text-muted font-bold">#{entry.rank}</span>}
                         <div>
-                          <p className="font-display text-sm">{entry.name} {isMe && <span className="font-mono text-[10px] text-rust">(you)</span>}</p>
+                          <p className="font-display text-sm flex items-center gap-2">
+                            <span>{entry.name} {isMe && <span className="font-mono text-[10px] text-rust">(you)</span>}</span>
+                            <TierBadge tier={entry.tier} />
+                          </p>
                           <p className="font-mono text-xs text-muted">@{entry.username}</p>
                         </div>
                       </div>
