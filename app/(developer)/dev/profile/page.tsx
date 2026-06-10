@@ -14,6 +14,7 @@ import { Divider } from "@/components/ui/divider";
 import { SocialLink } from "@/components/ui/social-link";
 import { TierBadge } from "@/components/tier-badge";
 import { MasteryRadar } from "@/components/mastery-radar";
+import { StatTip } from "@/components/ui/stat-tip";
 
 interface Profile {
   name: string;
@@ -171,7 +172,7 @@ export default function ProfilePage() {
         <div className="grid grid-cols-2 sm:grid-cols-6 gap-4 mt-6">
           <div className="text-center">
             <p className="font-display text-2xl">{profile.direction_rating ?? 1000}</p>
-            <p className="font-mono text-[10px] text-muted uppercase tracking-wide">Direction</p>
+            <p className="font-mono text-[10px] text-muted uppercase tracking-wide"><StatTip tip="AI-Direction Rating: how well you steer an AI agent toward the goal (ELO — the challenge is the opponent).">Direction</StatTip></p>
             {profile.tier && (
               <div className="mt-1 flex justify-center">
                 <TierBadge tier={profile.tier} />
@@ -180,23 +181,23 @@ export default function ProfilePage() {
           </div>
           <div className="text-center">
             <p className="font-display text-2xl">{profile.efficiency_rating ?? 1000}</p>
-            <p className="font-mono text-[10px] text-muted uppercase tracking-wide">Efficiency</p>
+            <p className="font-mono text-[10px] text-muted uppercase tracking-wide"><StatTip tip="Efficiency Rating: how economically you solve — high scores with fewer agent turns.">Efficiency</StatTip></p>
           </div>
           <div className="text-center">
             <p className="font-display text-2xl">{profile.challenges_completed}</p>
-            <p className="font-mono text-[10px] text-muted uppercase tracking-wide">Challenges</p>
+            <p className="font-mono text-[10px] text-muted uppercase tracking-wide"><StatTip tip="Distinct challenges you've completed (scored).">Challenges</StatTip></p>
           </div>
           <div className="text-center">
             <p className="font-display text-2xl">{profile.total_score > 0 ? profile.total_score.toFixed(0) : "—"}</p>
-            <p className="font-mono text-[10px] text-muted uppercase tracking-wide">Score</p>
+            <p className="font-mono text-[10px] text-muted uppercase tracking-wide"><StatTip tip="Weighted-average score across your challenges (harder challenges count more).">Score</StatTip></p>
           </div>
           <div className="text-center">
             <p className="font-display text-2xl">{profile.rank || "—"}</p>
-            <p className="font-mono text-[10px] text-muted uppercase tracking-wide">Rank</p>
+            <p className="font-mono text-[10px] text-muted uppercase tracking-wide"><StatTip tip="Your position on the global leaderboard.">Rank</StatTip></p>
           </div>
           <div className="text-center">
             <p className="font-display text-2xl">{profile.streak_days || 0}</p>
-            <p className="font-mono text-[10px] text-muted uppercase tracking-wide">Streak</p>
+            <p className="font-mono text-[10px] text-muted uppercase tracking-wide"><StatTip tip="Consecutive days with a scored submission.">Streak</StatTip></p>
           </div>
         </div>
 

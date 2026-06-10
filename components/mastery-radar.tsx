@@ -23,14 +23,14 @@ export function MasteryRadar({
 }) {
   const top = categories.slice(0, 6);
 
-  // A radar needs at least 3 axes — otherwise fall back to a simple list.
+  // A radar needs at least 3 axes — otherwise fall back to a simple full-width list.
   if (top.length < 3) {
     return (
-      <div>
+      <div className="w-full">
         {top.map((c) => (
           <div
             key={c.key}
-            className="flex items-center justify-between py-2 border-b border-border last:border-b-0"
+            className="flex items-center justify-between gap-4 py-2 border-b border-border last:border-b-0"
           >
             <span className="font-mono text-sm">{titleCaseKey(c.key)}</span>
             <span className="font-display text-base">{c.rating}</span>
