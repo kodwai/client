@@ -27,18 +27,6 @@ interface Challenge {
   avg_score: number | null;
 }
 
-interface Quest {
-  key: string;
-  scope: string;
-  title: string;
-  description: string;
-  target: number;
-  current: number;
-  reward_xp: number;
-  completed: boolean;
-  claimed: boolean;
-}
-
 const difficultyVariant: Record<string, "success" | "info" | "warning" | "error"> = {
   easy: "success",
   medium: "warning",
@@ -56,7 +44,6 @@ export default function ChallengesPage() {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [daily, setDaily] = useState<{ challenge: Challenge; completed_today: boolean } | null>(null);
   const [sprint, setSprint] = useState<{ challenge: { title: string; slug: string; difficulty: string; category: string }; ends_at: string } | null>(null);
-  const [quests, setQuests] = useState<Quest[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState("");
@@ -92,20 +79,6 @@ export default function ChallengesPage() {
   useEffect(() => {
     api.get("/api/sprint/current").then(setSprint).catch(() => setSprint(null));
   }, []);
-
-  useEffect(() => {
-    api.get("/api/quests").then(setQuests).catch(() => setQuests([]));
-  }, []);
-
-  async function claimQuest(key: string) {
-    try {
-      await api.post("/api/quests/" + key + "/claim", {});
-      const data = await api.get("/api/quests");
-      setQuests(data);
-    } catch {
-      // ignore
-    }
-  }
 
   const stats = useMemo(() => {
     const cats = new Map<string, number>();
@@ -150,110 +123,65 @@ export default function ChallengesPage() {
       <ActiveChallengeBanner />
       <FreeSubmissionsBanner />
 
-      {/* Challenge of the day */}
-      {daily && (
-        <Card className="mb-8 border-rust/30 hover:border-rust/50 transition-colors">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-rust">
-            ★ Challenge of the Day
-          </span>
-          <h2 className="font-display text-2xl mt-2 mb-3">{daily.challenge.title}</h2>
-          <div className="flex items-center gap-2 mb-4">
-            <Badge variant={difficultyVariant[daily.challenge.difficulty] || "info"}>
-              {daily.challenge.difficulty}
-            </Badge>
-            <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
-              {daily.challenge.category}
-            </span>
-            <span className="font-mono text-xs text-muted">
-              {daily.challenge.time_limit_minutes} min
-            </span>
-          </div>
-          {daily.completed_today ? (
-            <span className="font-mono text-sm text-green-600">✓ Completed today</span>
-          ) : (
-            <Link
-              href={`/dev/challenges/${daily.challenge.slug}`}
-              className="font-mono text-sm text-rust hover:text-rust-hover transition-colors"
-            >
-              Start challenge →
-            </Link>
-          )}
-        </Card>
-      )}
-
-      {isEnabled("weekly_sprint") && sprint && (
-        <Card className="mb-8 border-rust/30 hover:border-rust/50 transition-colors">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-rust">
-            ⚡ Weekly Sprint
-          </span>
-          <h2 className="font-display text-2xl mt-2 mb-3">{sprint.challenge.title}</h2>
-          <div className="flex items-center gap-2 mb-4">
-            <Badge variant={difficultyVariant[sprint.challenge.difficulty] || "info"}>
-              {sprint.challenge.difficulty}
-            </Badge>
-            <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
-              {sprint.challenge.category}
-            </span>
-            <span className="font-mono text-xs text-muted">
-              Ends in <SprintCountdown endsAt={sprint.ends_at} />
-            </span>
-          </div>
-          <Link
-            href="/dev/sprint"
-            className="font-mono text-sm text-rust hover:text-rust-hover transition-colors"
-          >
-            View sprint →
-          </Link>
-        </Card>
-      )}
-
-      {/* Quests */}
-      {quests.length > 0 && (
-        <Card className="mb-8">
-          <h2 className="font-display text-xl mb-4">Quests</h2>
-          {(["daily", "weekly"] as const).map((scope) => {
-            const scoped = quests.filter((q) => q.scope === scope);
-            if (scoped.length === 0) return null;
-            return (
-              <div key={scope} className="mb-6 last:mb-0">
-                <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-3">
-                  {scope}
-                </p>
-                <div className="space-y-3">
-                  {scoped.map((q) => {
-                    const pct = q.target > 0 ? Math.min(100, (q.current / q.target) * 100) : 0;
-                    return (
-                      <div
-                        key={q.key}
-                        className="flex items-center gap-4 py-2 border-b border-border last:border-b-0"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="font-display text-sm">{q.title}</p>
-                          <p className="font-mono text-xs text-muted mb-2">{q.description}</p>
-                          <div className="h-1.5 bg-cream-dark/30 border border-border overflow-hidden">
-                            <div className="h-full bg-rust" style={{ width: `${pct}%` }} />
-                          </div>
-                          <p className="font-mono text-[10px] text-rust mt-1">+{q.reward_xp} XP</p>
-                        </div>
-                        <div className="flex-shrink-0 text-right">
-                          {q.completed && !q.claimed ? (
-                            <Button onClick={() => claimQuest(q.key)}>Claim</Button>
-                          ) : q.claimed ? (
-                            <span className="font-mono text-xs text-green-600">Claimed ✓</span>
-                          ) : (
-                            <span className="font-mono text-xs text-muted">
-                              {q.current}/{q.target}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+      {/* Challenge of the day + Weekly sprint — compact side-by-side row */}
+      {(daily || (isEnabled("weekly_sprint") && sprint)) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          {daily && (
+            <Card className="border-rust/30 hover:border-rust/50 transition-colors">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-rust">
+                ★ Challenge of the Day
+              </span>
+              <h2 className="font-display text-xl mt-1.5 mb-2">{daily.challenge.title}</h2>
+              <div className="flex items-center gap-2 mb-3">
+                <Badge variant={difficultyVariant[daily.challenge.difficulty] || "info"}>
+                  {daily.challenge.difficulty}
+                </Badge>
+                <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
+                  {daily.challenge.category}
+                </span>
+                <span className="font-mono text-xs text-muted">
+                  {daily.challenge.time_limit_minutes} min
+                </span>
               </div>
-            );
-          })}
-        </Card>
+              {daily.completed_today ? (
+                <span className="font-mono text-sm text-green-600">✓ Completed today</span>
+              ) : (
+                <Link
+                  href={`/dev/challenges/${daily.challenge.slug}`}
+                  className="font-mono text-sm text-rust hover:text-rust-hover transition-colors"
+                >
+                  Start challenge →
+                </Link>
+              )}
+            </Card>
+          )}
+
+          {isEnabled("weekly_sprint") && sprint && (
+            <Card className="border-rust/30 hover:border-rust/50 transition-colors">
+              <span className="font-mono text-[10px] uppercase tracking-widest text-rust">
+                ⚡ Weekly Sprint
+              </span>
+              <h2 className="font-display text-xl mt-1.5 mb-2">{sprint.challenge.title}</h2>
+              <div className="flex items-center gap-2 mb-3">
+                <Badge variant={difficultyVariant[sprint.challenge.difficulty] || "info"}>
+                  {sprint.challenge.difficulty}
+                </Badge>
+                <span className="font-mono text-[10px] uppercase tracking-widest text-muted">
+                  {sprint.challenge.category}
+                </span>
+                <span className="font-mono text-xs text-muted">
+                  Ends in <SprintCountdown endsAt={sprint.ends_at} />
+                </span>
+              </div>
+              <Link
+                href="/dev/sprint"
+                className="font-mono text-sm text-rust hover:text-rust-hover transition-colors"
+              >
+                View sprint →
+              </Link>
+            </Card>
+          )}
+        </div>
       )}
 
       {/* Difficulty pills */}

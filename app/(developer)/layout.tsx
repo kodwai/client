@@ -11,6 +11,7 @@ import { ClaudeKeyGate } from "@/components/claude-key-gate";
 
 const navLinks = [
   { href: "/dev/challenges", label: "Challenges" },
+  { href: "/dev/quests", label: "Quests" },
   { href: "/dev/submissions", label: "Submissions" },
   { href: "/dev/leaderboard", label: "Leaderboard" },
   { href: "/dev/events", label: "Events" },
