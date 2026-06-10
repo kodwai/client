@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
 import { SocialLink } from "@/components/ui/social-link";
+import { TierBadge } from "@/components/tier-badge";
 
 interface Profile {
   name: string;
@@ -29,6 +30,8 @@ interface Profile {
   rank: number | null;
   streak_days: number;
   direction_rating: number;
+  efficiency_rating?: number;
+  tier?: { key: string; name: string; color: string; next_name?: string | null; next_at?: number | null; progress?: number } | null;
   recent_submissions?: Submission[];
 }
 
@@ -73,6 +76,8 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [cardTheme, setCardTheme] = useState<"dark" | "light" | "gradient">("dark");
 
   // Edit form state
   const [bio, setBio] = useState("");
@@ -168,10 +173,19 @@ export default function ProfilePage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mt-6">
+        <div className="grid grid-cols-2 sm:grid-cols-6 gap-4 mt-6">
           <div className="text-center">
             <p className="font-display text-2xl">{profile.direction_rating ?? 1000}</p>
             <p className="font-mono text-[10px] text-muted uppercase tracking-wide">Direction</p>
+            {profile.tier && (
+              <div className="mt-1 flex justify-center">
+                <TierBadge tier={profile.tier} />
+              </div>
+            )}
+          </div>
+          <div className="text-center">
+            <p className="font-display text-2xl">{profile.efficiency_rating ?? 1000}</p>
+            <p className="font-mono text-[10px] text-muted uppercase tracking-wide">Efficiency</p>
           </div>
           <div className="text-center">
             <p className="font-display text-2xl">{profile.challenges_completed}</p>
@@ -201,6 +215,52 @@ export default function ProfilePage() {
           </div>
         )}
       </Card>
+
+      {/* Embed rank card */}
+      {(() => {
+        const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+        const cardUrl = `${apiBase}/api/developers/${profile.username}/card.svg?theme=${cardTheme}`;
+        const markdown = `[![kodwai](${cardUrl})](https://kodwai.com)`;
+        const themes: Array<typeof cardTheme> = ["dark", "light", "gradient"];
+        return (
+          <Card className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-lg">Embed your rank card</h2>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  navigator.clipboard.writeText(markdown);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+              >
+                {copied ? "Copied" : "Copy"}
+              </Button>
+            </div>
+            <div className="flex gap-2 mb-3">
+              {themes.map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setCardTheme(t)}
+                  className={`font-mono text-[10px] uppercase tracking-widest px-3 py-1 border transition-colors ${
+                    cardTheme === t
+                      ? "border-rust text-rust"
+                      : "border-border text-muted hover:text-ink"
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            <pre className="font-mono text-xs text-muted border border-border bg-white/30 p-3 overflow-x-auto whitespace-pre-wrap break-all">
+              {markdown}
+            </pre>
+            <div className="mt-4">
+              <img src={cardUrl} alt="kodwai rank card" />
+            </div>
+          </Card>
+        );
+      })()}
 
       {/* Edit form */}
       {editing && (
