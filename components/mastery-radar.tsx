@@ -72,11 +72,14 @@ export function MasteryRadar({
     .map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`)
     .join(" ");
 
+  // Horizontal breathing room so side labels (e.g. "Algorithms") aren't clipped.
+  const padX = 56;
+
   return (
     <svg
-      width={size}
+      width={size + padX * 2}
       height={size}
-      viewBox={`0 0 ${size} ${size}`}
+      viewBox={`${-padX} 0 ${size + padX * 2} ${size}`}
       className="max-w-full"
     >
       {/* Concentric grid polygons */}
