@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
 import { SocialLink } from "@/components/ui/social-link";
 import { TierBadge } from "@/components/tier-badge";
+import { MasteryRadar } from "@/components/mastery-radar";
 
 interface Profile {
   name: string;
@@ -32,15 +33,9 @@ interface Profile {
   direction_rating: number;
   efficiency_rating?: number;
   tier?: { key: string; name: string; color: string; next_name?: string | null; next_at?: number | null; progress?: number } | null;
+  xp?: number;
+  level?: { level: number; xp: number; level_floor: number; next_level_xp: number; progress: number };
   recent_submissions?: Submission[];
-}
-
-function titleCaseKey(key: string): string {
-  return key
-    .replace(/-/g, " ")
-    .split(" ")
-    .map((word) => (word ? word.charAt(0).toUpperCase() + word.slice(1) : word))
-    .join(" ");
 }
 
 function normalizeXHandle(raw: string): string | null {
@@ -205,6 +200,26 @@ export default function ProfilePage() {
           </div>
         </div>
 
+        {/* Level */}
+        {profile.level && (
+          <div className="mt-6 pt-4 border-t border-border">
+            <div className="flex items-baseline justify-between mb-2">
+              <p className="font-mono text-[10px] text-muted uppercase tracking-wide">
+                Level <span className="font-display text-base text-ink">{profile.level.level}</span>
+              </p>
+              <p className="font-mono text-[10px] text-muted">
+                {profile.level.xp} XP · next {profile.level.next_level_xp}
+              </p>
+            </div>
+            <div className="h-1.5 bg-cream-dark/30 border border-border overflow-hidden">
+              <div
+                className="h-full bg-rust"
+                style={{ width: `${Math.min(100, Math.max(0, profile.level.progress * 100))}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Links */}
         {!editing && (profile.github_url || profile.linkedin_url || profile.website_url || profile.x_url) && (
           <div className="flex flex-wrap gap-x-5 gap-y-2 mt-4 pt-4 border-t border-border">
@@ -290,13 +305,8 @@ export default function ProfilePage() {
             {skills.category.length > 0 && (
               <Card>
                 <p className="font-mono text-[10px] text-muted uppercase tracking-wide mb-3">By category</p>
-                <div>
-                  {skills.category.slice(0, 5).map((s) => (
-                    <div key={s.key} className="flex items-center justify-between py-2 border-b border-border last:border-b-0">
-                      <span className="font-mono text-sm">{titleCaseKey(s.key)}</span>
-                      <span className="font-display text-base">{s.rating}</span>
-                    </div>
-                  ))}
+                <div className="flex justify-center">
+                  <MasteryRadar categories={skills.category} />
                 </div>
               </Card>
             )}
