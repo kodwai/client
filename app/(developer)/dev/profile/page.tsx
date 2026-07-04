@@ -33,6 +33,8 @@ interface Profile {
   streak_days: number;
   direction_rating: number;
   efficiency_rating?: number;
+  ability_theta?: number | null;   // Layer-D IRT operator ability (null until a scored operator submission)
+  ability_se?: number | null;      // Fisher-information standard error of ability_theta
   tier?: { key: string; name: string; color: string; next_name?: string | null; next_at?: number | null; progress?: number } | null;
   xp?: number;
   level?: { level: number; xp: number; level_floor: number; next_level_xp: number; progress: number };
@@ -200,6 +202,28 @@ export default function ProfilePage() {
             <p className="font-mono text-[10px] text-muted uppercase tracking-wide"><StatTip tip="Consecutive days with a scored submission.">Streak</StatTip></p>
           </div>
         </div>
+
+        {/* Operator Ability (Layer-D IRT: calibrated latent skill + uncertainty) */}
+        {typeof profile.ability_theta === "number" && (
+          <div className="mt-6 pt-4 border-t border-border">
+            <div className="flex items-baseline justify-between">
+              <p className="font-mono text-[10px] text-muted uppercase tracking-wide">
+                <StatTip tip="Operator Ability θ̂: a calibrated latent-skill estimate (IRT) across your challenge battery, with a 95% confidence interval. Higher = better at directing the agent; the interval narrows as you complete more challenges.">Operator Ability θ̂</StatTip>
+              </p>
+              <p className="font-display text-base text-ink">
+                {profile.ability_theta.toFixed(2)}
+                {typeof profile.ability_se === "number" && (
+                  <span className="font-mono text-xs text-muted"> ± {profile.ability_se.toFixed(2)}</span>
+                )}
+              </p>
+            </div>
+            {typeof profile.ability_se === "number" && (
+              <p className="mt-1 font-mono text-[10px] text-muted">
+                95% CI [{(profile.ability_theta - 1.96 * profile.ability_se).toFixed(2)}, {(profile.ability_theta + 1.96 * profile.ability_se).toFixed(2)}]
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Level */}
         {profile.level && (

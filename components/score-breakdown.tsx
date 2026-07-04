@@ -102,7 +102,20 @@ export function ScoreBreakdownV2View({ breakdown }: { breakdown: ScoreBreakdownV
       )}
       {breakdown.baseline_lift?.beat && (
         <Card className="mb-6 border-green-600/30 bg-green-600/5">
-          <p className="font-display text-base text-green-700">You beat the solo-AI baseline by {breakdown.baseline_lift.delta} points 🎉</p>
+          {breakdown.baseline_lift.source === "operator" && typeof breakdown.baseline_lift.L === "number" ? (
+            <>
+              <p className="font-display text-base text-green-700">
+                {breakdown.baseline_lift.L >= 1
+                  ? "You beat the expert ceiling on this challenge 🎉"
+                  : "You beat the solo-AI baseline 🎉"}
+              </p>
+              <p className="mt-1 font-mono text-xs text-muted">
+                Normalized lift L = {breakdown.baseline_lift.L.toFixed(2)} (0 = solo-AI baseline, 1 = expert ceiling)
+              </p>
+            </>
+          ) : (
+            <p className="font-display text-base text-green-700">You beat the solo-AI baseline by {breakdown.baseline_lift.delta} points 🎉</p>
+          )}
         </Card>
       )}
       {breakdown.axes.map((axis) => <AxisCard key={axis.name} axis={axis} />)}

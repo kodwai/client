@@ -22,7 +22,19 @@ export interface ScoreBreakdownV2 {
   late_penalty: number;
   leaderboard_eligible: boolean;
   ineligible_reason?: "no_api_key" | "scoring_error" | null;
-  baseline_lift: { beat: boolean; delta: number } | null;
+  // `source: "operator"` marks the rigorous Layer-E lift (adds L/s); legacy rows
+  // carry only beat/delta. All operator fields are optional for back-compat.
+  baseline_lift:
+    | {
+        beat: boolean;
+        delta: number;
+        L?: number;
+        s?: number;
+        mu_baseline?: number;
+        ceiling?: number;
+        source?: "operator" | string;
+      }
+    | null;
   axes: AxisResult[];
   confidence?: "high" | "medium" | "low" | "none";
   trace_quality?: string | null;
