@@ -103,7 +103,7 @@ function PlatformFeedbackModal({ open, onClose }: PlatformFeedbackModalProps) {
           <>
             <h2 className="font-display text-xl mb-1">Share Feedback</h2>
             <p className="font-mono text-xs text-muted mb-6">
-              Help us improve Kodwai — report bugs, request features, or share your thoughts.
+              Help us improve Kodwai: report bugs, request features, or share your thoughts.
             </p>
             <form onSubmit={handleSubmit} className="space-y-5">
               <Select

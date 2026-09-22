@@ -1,44 +1,12 @@
-"use client";
+import type { Metadata } from "next";
+import { HomeRedirect } from "./home-redirect";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+// The app root only redirects, so keep it out of the index and let
+// www.kodwai.com own the brand queries. Links are still followed.
+export const metadata: Metadata = {
+  robots: { index: false, follow: true },
+};
 
 export default function Home() {
-  const router = useRouter();
-  const [checked, setChecked] = useState(false);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    api
-      .get("/api/auth/me")
-      .then((user) => {
-        if (user.user_type === "developer") {
-          router.push("/dev/challenges");
-        } else {
-          router.push("/dashboard");
-        }
-      })
-      .catch(() => {
-        router.push("/login");
-      })
-      .finally(() => {
-        setChecked(true);
-      });
-  }, [router]);
-
-  if (!checked) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="font-mono text-sm text-muted uppercase tracking-widest">Loading...</p>
-      </div>
-    );
-  }
-
-  return null;
+  return <HomeRedirect />;
 }

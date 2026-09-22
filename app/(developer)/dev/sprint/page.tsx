@@ -116,7 +116,7 @@ export default function SprintPage() {
           <Card>
             <h3 className="font-display text-xl mb-4">Live Standings</h3>
             {data.leaderboard.length === 0 ? (
-              <p className="font-mono text-sm text-muted">No entries yet — be the first.</p>
+              <p className="font-mono text-sm text-muted">No entries yet. Be the first.</p>
             ) : (
               <div>
                 {data.leaderboard.map((entry) => {

@@ -48,7 +48,7 @@ export default function AdminSessionDetailPage() {
         <h1 className="font-display text-3xl">{session.candidate_name}</h1>
         <Badge variant={statusVariant[session.status] || "default"}>{session.status}</Badge>
       </div>
-      <p className="text-muted font-mono text-sm mb-2">{session.candidate_email} — {session.project_title} ({session.org_name})</p>
+      <p className="text-muted font-mono text-sm mb-2">{session.candidate_email} · {session.project_title} ({session.org_name})</p>
       <Divider className="mx-0 my-6" />
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">

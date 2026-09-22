@@ -58,7 +58,7 @@ export function Celebration({ data }: { data: CelebrationData }) {
         <div key={b.slug} className="flex items-center gap-3 border border-border bg-white/50 p-3">
           <img src={`/badges/${b.slug}.png`} alt={b.name} className="w-10 h-10 object-contain" />
           <div>
-            <div className="font-display text-sm">Badge unlocked — {b.name}</div>
+            <div className="font-display text-sm">Badge unlocked: {b.name}</div>
             {b.description && <div className="font-mono text-xs text-muted">{b.description}</div>}
           </div>
         </div>

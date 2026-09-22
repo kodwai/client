@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 interface ShareData {
   challenge_title: string;
   challenge_difficulty: string;
@@ -157,7 +159,12 @@ export function ScoreCardServer({ data, token }: { data: ShareData; token: strin
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 mt-4 border-t border-border">
           {data.username && (
-            <span className="font-mono text-[10px] text-muted">@{data.username}</span>
+            <Link
+              href={`/developers/${encodeURIComponent(data.username)}`}
+              className="font-mono text-[10px] text-muted hover:text-rust transition-colors"
+            >
+              @{data.username}
+            </Link>
           )}
           <span className="font-mono text-[9px] text-muted/40 ml-auto">kodwai.com</span>
         </div>

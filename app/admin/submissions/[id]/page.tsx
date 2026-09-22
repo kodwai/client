@@ -62,7 +62,7 @@ export default function AdminSubmissionDetailPage() {
         </Button>
       </div>
       <p className="text-muted font-mono text-sm mb-2">
-        by {sub.user_name} (@{sub.username || sub.user_email}) — {sub.difficulty} — {sub.agent_used || "no agent"}
+        by {sub.user_name} (@{sub.username || sub.user_email}) · {sub.difficulty} · {sub.agent_used || "no agent"}
       </p>
       <Divider className="mx-0 my-6" />
 
@@ -102,7 +102,7 @@ export default function AdminSubmissionDetailPage() {
 
           {sub.score_breakdown.is_late && (
             <div className="mb-3 p-2 border border-rust/30 bg-rust/5 font-mono text-xs text-rust">
-              Late submission — {sub.score_breakdown.late_penalty} point penalty applied
+              Late submission: {sub.score_breakdown.late_penalty} point penalty applied
             </div>
           )}
 
@@ -113,7 +113,7 @@ export default function AdminSubmissionDetailPage() {
                 {sub.score_breakdown.objective.dimensions.map((d: any) => (
                   <div key={d.name} className="flex items-center justify-between">
                     <span className="font-mono text-xs">{d.name}</span>
-                    <span className="font-mono text-xs text-muted">{d.score?.toFixed(1)}/{d.max} — {d.detail}</span>
+                    <span className="font-mono text-xs text-muted">{d.score?.toFixed(1)}/{d.max} · {d.detail}</span>
                   </div>
                 ))}
               </div>
@@ -132,7 +132,7 @@ export default function AdminSubmissionDetailPage() {
               ))}
             </div>
           ) : sub.score_breakdown.analytical_skipped && (
-            <p className="font-mono text-xs text-muted">Analytical scoring skipped — developer has no API key</p>
+            <p className="font-mono text-xs text-muted">Analytical scoring skipped: developer has no API key</p>
           )}
         </Card>
       )}

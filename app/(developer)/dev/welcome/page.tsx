@@ -1,23 +1,52 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import posthog from "posthog-js";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Divider } from "@/components/ui/divider";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
+
+const ACQUISITION_SOURCES = [
+  { value: "chatgpt", label: "ChatGPT" },
+  { value: "claude", label: "Claude" },
+  { value: "perplexity", label: "Perplexity" },
+  { value: "google", label: "Google" },
+  { value: "bing", label: "Bing" },
+  { value: "github", label: "GitHub" },
+  { value: "hacker_news", label: "Hacker News" },
+  { value: "reddit", label: "Reddit" },
+  { value: "x", label: "X/Twitter" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "youtube", label: "YouTube" },
+  { value: "product_hunt", label: "Product Hunt" },
+  { value: "friend", label: "Friend or colleague" },
+  { value: "other", label: "Other" },
+];
+
+// Sources that are AI assistants get the "What did you ask it?" follow-up.
+const AI_ASSISTANT_SOURCES = new Set(["chatgpt", "claude", "perplexity"]);
+const PROMPT_MAX_LENGTH = 500;
 
 export default function WelcomePage() {
+  const router = useRouter();
   const { user, refreshUser } = useAuth();
   const [step, setStep] = useState(0);
+  const [source, setSource] = useState("");
+  const [prompt, setPrompt] = useState("");
 
   // Mark the intro as seen on view so it only ever auto-shows once. Best-effort:
   // if it fails the developer can still continue, and it retries on next visit.
+  // Falls back to PATCH in case the API only exposes that verb.
   useEffect(() => {
     let cancelled = false;
     api
       .post("/api/auth/me/welcome", {})
+      .catch(() => api.patch("/api/auth/me/welcome", {}))
       .then(() => {
         if (!cancelled) refreshUser();
       })
@@ -63,7 +92,7 @@ export default function WelcomePage() {
           </div>
           <div className="p-4 sm:p-5 border-l-2 border-border">
             <p className="font-display text-base sm:text-lg mb-1">Choose your agent</p>
-            <p className="text-xs sm:text-sm text-muted">Claude Code, Cursor, or Codex — you pick, we trace</p>
+            <p className="text-xs sm:text-sm text-muted">Claude Code, Cursor, or Codex. You pick, we trace.</p>
           </div>
           <div className="p-4 sm:p-5 border-l-2 border-border">
             <p className="font-display text-base sm:text-lg mb-1">Code your solution</p>
@@ -108,6 +137,23 @@ export default function WelcomePage() {
 
   const isLast = step === steps.length - 1;
   const firstName = user?.name?.split(" ")[0] || "there";
+  const askedAnAssistant = AI_ASSISTANT_SOURCES.has(source);
+
+  // The acquisition answer is optional and fire-and-forget: if the API rejects
+  // it (older deploy, validation), the developer still moves on.
+  function finish() {
+    if (source) {
+      const answer = askedAnAssistant ? prompt.trim().slice(0, PROMPT_MAX_LENGTH) : "";
+      api
+        .patch("/api/auth/me/welcome", {
+          acquisition_source: source,
+          ...(answer ? { acquisition_prompt: answer } : {}),
+        })
+        .catch(() => {});
+      posthog.capture("acquisition_source_selected", { source, answered_prompt: !!answer });
+    }
+    router.push("/dev/challenges");
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start px-5 sm:px-6 pt-16 sm:pt-[12vh] pb-16">
@@ -136,6 +182,29 @@ export default function WelcomePage() {
           {steps[step].content}
         </Card>
 
+        {isLast && (
+          <div className="mb-6 sm:mb-8 space-y-5">
+            <Select
+              id="acquisition-source"
+              label="How did you find Kodwai? (optional)"
+              placeholder="Choose one"
+              options={ACQUISITION_SOURCES}
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+            />
+            {askedAnAssistant && (
+              <Input
+                id="acquisition-prompt"
+                label="What did you ask it?"
+                placeholder="e.g. where can I practice coding with Claude Code"
+                value={prompt}
+                maxLength={PROMPT_MAX_LENGTH}
+                onChange={(e) => setPrompt(e.target.value)}
+              />
+            )}
+          </div>
+        )}
+
         <div className="flex justify-between items-center">
           {step > 0 ? (
             <button
@@ -148,9 +217,7 @@ export default function WelcomePage() {
             <div />
           )}
           {isLast ? (
-            <Link href="/dev/challenges">
-              <Button className="text-sm px-6 sm:px-8 py-3.5">Browse Challenges</Button>
-            </Link>
+            <Button className="text-sm px-6 sm:px-8 py-3.5" onClick={finish}>Browse Challenges</Button>
           ) : (
             <Button className="text-sm px-6 sm:px-8 py-3.5" onClick={() => setStep(step + 1)}>Next</Button>
           )}

@@ -350,7 +350,7 @@ function LegacyBreakdown({ bd }: { bd: LegacyBreakdownData }) {
             <div>
               <p className="font-display text-base">Late Submission</p>
               <p className="font-mono text-xs text-muted">
-                Time limit exceeded — a {bd.late_penalty} point penalty was applied to your score.
+                Time limit exceeded: a {bd.late_penalty} point penalty was applied to your score.
               </p>
             </div>
           </div>
@@ -426,7 +426,7 @@ function LegacyBreakdown({ bd }: { bd: LegacyBreakdownData }) {
         <Card className="mb-6">
           <div className="p-3 border border-border">
             <p className="font-mono text-xs text-muted">
-              AI-powered analytical scoring was skipped — add your Anthropic API key in{" "}
+              AI-powered analytical scoring was skipped. Add your Anthropic API key in{" "}
               <Link href="/dev/settings" className="text-rust hover:text-rust-hover transition-colors">
                 Settings
               </Link>{" "}

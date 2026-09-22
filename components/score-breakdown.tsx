@@ -95,8 +95,8 @@ export function ScoreBreakdownV2View({ breakdown }: { breakdown: ScoreBreakdownV
         <Card className="mb-6">
           <p className="font-mono text-xs text-muted">
             {breakdown.confidence === "none"
-              ? "No agent trace captured — the Direction (process) score couldn’t be assessed from your session."
-              : "Thin agent trace — the Direction (process) score is low-confidence. Richer sessions score more reliably."}
+              ? "No agent trace captured, so the Direction (process) score couldn’t be assessed from your session."
+              : "Thin agent trace: the Direction (process) score is low-confidence. Richer sessions score more reliably."}
           </p>
         </Card>
       )}

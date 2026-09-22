@@ -148,6 +148,16 @@ function PlatformFeedbackRow({
   const [response, setResponse] = useState(feedback.admin_response || "");
   const [saving, setSaving] = useState(false);
 
+  const handleReplySent = ({ message, emailed }: ReplyOutcome) => {
+    setStatus("resolved");
+    onUpdate({
+      ...feedback,
+      status: "resolved",
+      admin_response: message,
+      reply_emailed_at: emailed ? new Date().toISOString() : feedback.reply_emailed_at,
+    });
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -176,10 +186,11 @@ function PlatformFeedbackRow({
               {feedback.rating && (
                 <span className="font-mono text-xs text-muted">{feedback.rating}/5</span>
               )}
+              {feedback.reply_emailed_at && <RepliedTag at={feedback.reply_emailed_at} />}
             </div>
             <p className="font-mono text-sm truncate">{feedback.description}</p>
             <p className="font-mono text-[10px] text-muted mt-1">
-              {feedback.user_name} ({feedback.user_email}) — {formatDate(feedback.created_at)}
+              {feedback.user_name} ({feedback.user_email}) · {formatDate(feedback.created_at)}
             </p>
           </div>
           <svg
@@ -217,14 +228,24 @@ function PlatformFeedbackRow({
           </div>
           <Textarea
             label="Admin Response"
+            hint="Save stores it without emailing. Send reply email shows a preview, then emails it on confirm."
             value={response}
             onChange={(e) => setResponse(e.target.value)}
             rows={2}
             placeholder="Optional response..."
           />
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save"}
-          </Button>
+          <div className="flex flex-wrap gap-3 items-start">
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "Saving..." : "Save"}
+            </Button>
+          </div>
+          <ReplyEmailAction
+            kind="platform"
+            id={feedback.id}
+            recipient={feedback.user_email}
+            message={response}
+            onSent={handleReplySent}
+          />
         </div>
       )}
     </Card>
@@ -275,22 +296,236 @@ function ChallengeFeedbackTab() {
             <span className="col-span-2 text-right">Date</span>
           </div>
           {items.map((fb: any) => (
-            <div key={fb.id} className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-border last:border-b-0">
-              <div className="col-span-2">
-                <p className="font-display text-sm truncate">{fb.user_name}</p>
-                <p className="font-mono text-[10px] text-muted truncate">{fb.user_email}</p>
-              </div>
-              <span className="col-span-2 font-mono text-xs text-muted self-center truncate">{fb.challenge_title}</span>
-              <span className="col-span-1 font-display text-sm text-center self-center">{fb.rating_overall}/5</span>
-              <span className="col-span-1 font-mono text-xs text-muted text-center self-center">{fb.rating_difficulty ?? "—"}</span>
-              <span className="col-span-1 font-mono text-xs text-muted text-center self-center">{fb.rating_clarity ?? "—"}</span>
-              <span className="col-span-3 font-mono text-xs text-muted self-center truncate">{fb.comment || "—"}</span>
-              <span className="col-span-2 font-mono text-[10px] text-muted text-right self-center">{formatDate(fb.created_at)}</span>
-            </div>
+            <ChallengeFeedbackRow
+              key={fb.id}
+              feedback={fb}
+              onUpdate={(updated) => setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)))}
+            />
           ))}
         </div>
       )}
     </>
+  );
+}
+
+interface ChallengeFeedback {
+  id: string;
+  user_name: string;
+  user_email: string;
+  challenge_title: string;
+  rating_overall: number;
+  rating_difficulty: number | null;
+  rating_clarity: number | null;
+  comment: string | null;
+  created_at: string;
+  status?: string;
+  admin_response?: string | null;
+  reply_emailed_at?: string | null;
+}
+
+function ChallengeFeedbackRow({
+  feedback: fb,
+  onUpdate,
+}: {
+  feedback: ChallengeFeedback;
+  onUpdate: (fb: ChallengeFeedback) => void;
+}) {
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [message, setMessage] = useState(fb.admin_response || "");
+
+  const handleReplySent = ({ message: sent, emailed }: ReplyOutcome) => {
+    onUpdate({
+      ...fb,
+      status: "resolved",
+      admin_response: sent,
+      reply_emailed_at: emailed ? new Date().toISOString() : fb.reply_emailed_at,
+    });
+  };
+
+  return (
+    <div className="border-b border-border last:border-b-0">
+      <div className="grid grid-cols-12 gap-2 px-4 py-3">
+        <div className="col-span-2">
+          <p className="font-display text-sm truncate">{fb.user_name}</p>
+          <p className="font-mono text-[10px] text-muted truncate">{fb.user_email}</p>
+        </div>
+        <span className="col-span-2 font-mono text-xs text-muted self-center truncate">{fb.challenge_title}</span>
+        <span className="col-span-1 font-display text-sm text-center self-center">{fb.rating_overall}/5</span>
+        <span className="col-span-1 font-mono text-xs text-muted text-center self-center">{fb.rating_difficulty ?? "-"}</span>
+        <span className="col-span-1 font-mono text-xs text-muted text-center self-center">{fb.rating_clarity ?? "-"}</span>
+        <span className="col-span-3 font-mono text-xs text-muted self-center truncate">{fb.comment || "-"}</span>
+        <div className="col-span-2 text-right self-center space-y-1">
+          <p className="font-mono text-[10px] text-muted">{formatDate(fb.created_at)}</p>
+          {fb.reply_emailed_at && <RepliedTag at={fb.reply_emailed_at} />}
+          <button
+            type="button"
+            onClick={() => setReplyOpen(!replyOpen)}
+            className="block ml-auto font-mono text-[10px] uppercase tracking-widest text-rust hover:text-rust-hover transition-colors"
+          >
+            {replyOpen ? "Close" : "Reply"}
+          </button>
+        </div>
+      </div>
+
+      {replyOpen && (
+        <div className="px-4 pb-4 space-y-4">
+          {fb.comment && (
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted mb-1">Comment</p>
+              <p className="font-mono text-sm whitespace-pre-wrap">{fb.comment}</p>
+            </div>
+          )}
+          <Textarea
+            label="Reply"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            rows={3}
+            placeholder="Write your reply to the developer..."
+          />
+          <ReplyEmailAction
+            kind="challenges"
+            id={fb.id}
+            recipient={fb.user_email}
+            message={message}
+            onSent={handleReplySent}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Reply by email ─────────────────────────────────────────────────
+
+interface ReplyOutcome {
+  message: string;
+  emailed: boolean;
+}
+
+interface ReplyResponse {
+  ok: boolean;
+  dry_run: boolean;
+  email_send_id: string | null;
+  email_status?: string | null;
+  email_reason?: string | null;
+  preview?: { subject: string; text: string } | null;
+}
+
+function RepliedTag({ at }: { at: string }) {
+  return (
+    <span className="font-mono text-[10px] uppercase tracking-widest text-green-700">
+      Replied {formatDate(at)}
+    </span>
+  );
+}
+
+/**
+ * Emails the user a reply to their feedback and marks it resolved. Always shows
+ * a dry-run preview first; the real send needs a second, explicit click, and
+ * editing the message afterwards discards the preview.
+ */
+function ReplyEmailAction({
+  kind,
+  id,
+  recipient,
+  message,
+  onSent,
+}: {
+  kind: "platform" | "challenges";
+  id: string;
+  recipient: string;
+  message: string;
+  onSent: (outcome: ReplyOutcome) => void;
+}) {
+  const [preview, setPreview] = useState<{ subject: string; text: string } | null>(null);
+  const [previewedMessage, setPreviewedMessage] = useState("");
+  const [busy, setBusy] = useState<"preview" | "send" | null>(null);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState("");
+
+  const trimmed = message.trim();
+  const showPreview = preview !== null && previewedMessage === trimmed;
+
+  const post = async (dryRun: boolean): Promise<ReplyResponse> =>
+    adminApi.post(`/api/admin/feedback/${kind}/${id}/reply`, {
+      message: trimmed,
+      send_email: true,
+      status: "resolved",
+      dry_run: dryRun,
+    });
+
+  const handlePreview = async () => {
+    setBusy("preview");
+    setError("");
+    setResult("");
+    try {
+      const res = await post(true);
+      setPreview(res.preview ?? { subject: "(no subject returned)", text: trimmed });
+      setPreviewedMessage(trimmed);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Preview failed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleSend = async () => {
+    setBusy("send");
+    setError("");
+    try {
+      const res = await post(false);
+      if (res.ok === false) {
+        // The API saves nothing when the email is refused or fails, so the item stays unreplied.
+        setError(
+          `Not sent and not saved (${res.email_status ?? "refused"}${res.email_reason ? `: ${res.email_reason}` : ""}).`,
+        );
+        return;
+      }
+      const emailed = !!res.email_send_id;
+      setPreview(null);
+      setResult(
+        emailed
+          ? `Reply emailed to ${recipient}. Marked resolved.`
+          : "Saved and marked resolved, but no new email went out. This exact reply may have been sent already.",
+      );
+      onSent({ message: trimmed, emailed });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Send failed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      {!showPreview && (
+        <Button variant="secondary" onClick={handlePreview} disabled={!trimmed || busy !== null}>
+          {busy === "preview" ? "Preparing preview..." : "Send reply email"}
+        </Button>
+      )}
+
+      {showPreview && preview && (
+        <div className="border border-border bg-white/60 p-4 space-y-3">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted">
+            Preview · nothing sent yet
+          </p>
+          <p className="font-mono text-xs text-muted">To: {recipient}</p>
+          <p className="font-display text-base">{preview.subject}</p>
+          <pre className="font-mono text-xs whitespace-pre-wrap text-ink/80 max-h-80 overflow-auto">{preview.text}</pre>
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={handleSend} disabled={busy !== null}>
+              {busy === "send" ? "Sending..." : "Confirm and send"}
+            </Button>
+            <Button variant="secondary" onClick={() => setPreview(null)} disabled={busy !== null}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {error && <p className="font-mono text-xs text-rust">{error}</p>}
+      {result && <p className="font-mono text-xs text-green-700">{result}</p>}
+    </div>
   );
 }
 

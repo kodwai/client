@@ -1,14 +1,16 @@
 import type { MetadataRoute } from "next";
+import { APP_URL } from "@/lib/site";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://app.kodwai.com";
-
+// Crawling stays open on purpose: private routes (admin, auth, dashboard, /dev/*)
+// carry a noindex robots meta tag from their layouts, and a Disallow here would
+// stop crawlers from ever seeing it. Only the PostHog proxy is blocked.
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/login", "/signup"],
-      disallow: ["/dashboard", "/projects", "/sessions", "/settings"],
+      allow: "/",
+      disallow: ["/ingest/"],
     },
-    sitemap: `${BASE_URL}/sitemap.xml`,
+    sitemap: `${APP_URL}/sitemap.xml`,
   };
 }

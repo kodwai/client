@@ -174,7 +174,7 @@ export default function ProfilePage() {
         <div className="grid grid-cols-2 sm:grid-cols-6 gap-4 mt-6">
           <div className="text-center">
             <p className="font-display text-2xl">{profile.direction_rating ?? 1000}</p>
-            <p className="font-mono text-[10px] text-muted uppercase tracking-wide"><StatTip tip="AI-Direction Rating: how well you steer an AI agent toward the goal (ELO — the challenge is the opponent).">Direction</StatTip></p>
+            <p className="font-mono text-[10px] text-muted uppercase tracking-wide"><StatTip tip="AI-Direction Rating: how well you steer an AI agent toward the goal (ELO, where the challenge is the opponent).">Direction</StatTip></p>
             {profile.tier && (
               <div className="mt-1 flex justify-center">
                 <TierBadge tier={profile.tier} />
@@ -183,7 +183,7 @@ export default function ProfilePage() {
           </div>
           <div className="text-center">
             <p className="font-display text-2xl">{profile.efficiency_rating ?? 1000}</p>
-            <p className="font-mono text-[10px] text-muted uppercase tracking-wide"><StatTip tip="Efficiency Rating: how economically you solve — high scores with fewer agent turns.">Efficiency</StatTip></p>
+            <p className="font-mono text-[10px] text-muted uppercase tracking-wide"><StatTip tip="Efficiency Rating: how economically you solve: high scores with fewer agent turns.">Efficiency</StatTip></p>
           </div>
           <div className="text-center">
             <p className="font-display text-2xl">{profile.challenges_completed}</p>
@@ -260,7 +260,7 @@ export default function ProfilePage() {
       {(() => {
         const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
         const cardUrl = `${apiBase}/api/developers/${profile.username}/card.svg?theme=${cardTheme}`;
-        const markdown = `[![kodwai](${cardUrl})](https://kodwai.com)`;
+        const markdown = `[![kodwai](${cardUrl})](https://www.kodwai.com)`;
         const themes: Array<typeof cardTheme> = ["dark", "light", "gradient"];
         return (
           <Card className="mb-6">

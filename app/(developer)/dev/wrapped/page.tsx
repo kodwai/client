@@ -104,7 +104,7 @@ export default function WrappedPage() {
     ? `${titleCaseKey(data.top_category.key)} (${data.top_category.rating})`
     : "—";
 
-  const summary = `My kodwai Wrapped — Direction Rating ${data.direction_rating}, ${data.challenges_completed} challenges, best ${data.best_score ?? "–"}/100, ${data.streak_days}-day streak. Prove how you wield AI agents: kodwai.com`;
+  const summary = `My kodwai Wrapped: Direction Rating ${data.direction_rating}, ${data.challenges_completed} challenges, best ${data.best_score ?? "–"}/100, ${data.streak_days}-day streak. Prove how you wield AI agents: kodwai.com`;
   const shareHref = `https://twitter.com/intent/tweet?text=${encodeURIComponent(summary)}`;
 
   return (

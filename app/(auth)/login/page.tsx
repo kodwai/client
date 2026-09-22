@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GitHubButton } from "@/components/ui/github-button";
-import { api } from "@/lib/api";
+import { ResendVerification } from "@/components/resend-verification";
+import { ApiError, api, isExpectedClientError } from "@/lib/api";
 import posthog from "posthog-js";
 
 export default function LoginPage() {
@@ -14,11 +15,13 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [unverified, setUnverified] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
+    setUnverified(false);
     setLoading(true);
 
     try {
@@ -38,7 +41,11 @@ export default function LoginPage() {
         router.push(userType === "developer" ? "/dev/challenges" : "/dashboard");
       }
     } catch (err) {
-      posthog.captureException(err);
+      // Wrong password, unverified email and similar 4xx answers are expected;
+      // only report network failures and server errors.
+      if (!isExpectedClientError(err)) posthog.captureException(err);
+      // The API answers 403 only for a correct password on an unverified email.
+      setUnverified(err instanceof ApiError && err.status === 403 && /verify/i.test(err.message));
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
@@ -55,6 +62,11 @@ export default function LoginPage() {
       {error && (
         <div className="mb-6 p-4 border border-rust/20 bg-rust/5 font-mono text-sm text-rust">
           {error}
+          {unverified && (
+            <div className="mt-3 pt-3 border-t border-rust/20">
+              <ResendVerification email={email} />
+            </div>
+          )}
         </div>
       )}
 

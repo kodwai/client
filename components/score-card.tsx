@@ -87,7 +87,7 @@ export function ScoreCard({
       setShareUrl(url);
       return url;
     } catch {
-      return "https://kodwai.com";
+      return "https://www.kodwai.com";
     } finally {
       setSharing(false);
     }

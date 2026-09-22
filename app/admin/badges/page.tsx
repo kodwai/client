@@ -100,7 +100,7 @@ export default function AdminBadgesPage() {
             </div>
           </div>
           <p className="font-mono text-[10px] text-muted mb-4">
-            Badge image: place a PNG at <code className="bg-ink/5 px-1">client/public/badges/&#123;slug&#125;.png</code> — it will automatically display.
+            Badge image: place a PNG at <code className="bg-ink/5 px-1">client/public/badges/&#123;slug&#125;.png</code> and it will display automatically.
             Use the asset generation guide at <code className="bg-ink/5 px-1">docs/asset-generation-guide.md</code> to create matching images.
           </p>
           <div className="flex gap-3">

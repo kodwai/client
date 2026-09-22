@@ -1,26 +1,9 @@
 import type { MetadataRoute } from "next";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://app.kodwai.com";
-
+// Only genuinely public, server-rendered, indexable pages belong here. The app is
+// login-gated, and the marketing and public challenge pages live on
+// www.kodwai.com with their own sitemap. Public developer profiles stay out until
+// profile indexing ships as an opt-in.
 export default function sitemap(): MetadataRoute.Sitemap {
-  return [
-    {
-      url: BASE_URL,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 1,
-    },
-    {
-      url: `${BASE_URL}/login`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/signup`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-  ];
+  return [];
 }

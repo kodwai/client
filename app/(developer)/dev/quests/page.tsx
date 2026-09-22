@@ -44,7 +44,7 @@ export default function QuestsPage() {
     <div>
       <h1 className="font-display text-3xl mb-1">Quests</h1>
       <p className="text-muted font-mono text-sm mb-2">
-        Daily and weekly objectives — claim XP.
+        Daily and weekly objectives. Claim XP.
       </p>
       <Divider className="mx-0 my-8" />
 

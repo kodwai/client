@@ -66,7 +66,7 @@ export default function EventsPage() {
         <Card className="text-center py-12">
           <p className="font-display text-xl mb-2">No events yet</p>
           <p className="font-mono text-sm text-muted">
-            Check back soon — events will be announced here.
+            Check back soon. Events will be announced here.
           </p>
         </Card>
       ) : (

@@ -1,31 +1,33 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { formatDate } from "@/lib/date";
+import { notFound } from "next/navigation";
+import { formatDateCustom } from "@/lib/date";
+import { badgeImage } from "@/lib/badges";
+import { API_URL } from "@/lib/site";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Divider } from "@/components/ui/divider";
 import { SocialLink } from "@/components/ui/social-link";
 import { TierBadge } from "@/components/tier-badge";
 import { MasteryRadar } from "@/components/mastery-radar";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const difficultyVariant: Record<string, "success" | "warning" | "error"> = {
   easy: "success", medium: "warning", hard: "error",
 };
 
-const BADGE_IMAGES: Record<string, string> = {
-  "first-blood": "/badges/first-blood.png", "five-down": "/badges/five-down.png",
-  "ten-strong": "/badges/ten-strong.png", "quarter-century": "/badges/quarter-century.png",
-  "streak-3": "/badges/streak-3.png", "streak-7": "/badges/streak-7.png", "streak-30": "/badges/streak-30.png",
-  "top-10": "/badges/top-10.png", "speed-demon": "/badges/speed-demon.png",
-  "perfect-score": "/badges/perfect-score.png", "polyglot": "/badges/polyglot.png",
-  "claude-master": "/badges/claude-master.png", "cursor-pro": "/badges/cursor-pro.png",
-  "early-adopter": "/badges/early-adopter.png",
-};
+interface EarnedBadge {
+  id: string;
+  slug: string;
+  name: string;
+  earned_at: string;
+}
+
+interface RecentSubmission {
+  id: string;
+  challenge_title: string;
+  difficulty: string;
+  agent_used: string | null;
+  score: number | null;
+}
 
 interface Profile {
   name: string;
@@ -38,15 +40,12 @@ interface Profile {
   total_score: number;
   challenges_completed: number;
   rank: number | null;
-  streak_days: number;
   preferred_agent: string | null;
-  skills: string[];
-  badges: any[];
-  recent_submissions: any[];
+  badges: EarnedBadge[];
+  recent_submissions: RecentSubmission[];
   direction_rating?: number;
   efficiency_rating?: number;
   tier?: { key: string; name: string; color: string; next_name?: string | null; next_at?: number | null; progress?: number } | null;
-  xp?: number;
   level?: { level: number; xp: number; level_floor: number; next_level_xp: number; progress: number };
 }
 
@@ -55,48 +54,61 @@ interface Skills {
   model: { key: string; rating: number }[];
 }
 
-export default function PublicProfilePage() {
-  const params = useParams();
-  const username = params.username as string;
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [skills, setSkills] = useState<Skills | null>(null);
-  const [loading, setLoading] = useState(true);
+// Returns null only when the developer does not exist (API 404). Any other
+// failure throws, so an API outage renders the error page instead of a soft 404.
+async function getProfile(username: string): Promise<Profile | null> {
+  const res = await fetch(`${API_URL}/api/developers/${encodeURIComponent(username)}`, {
+    next: { revalidate: 60 },
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Profile request failed (${res.status})`);
+  return res.json();
+}
 
-  useEffect(() => {
-    fetch(`${API_URL}/api/developers/${username}`)
-      .then((r) => r.ok ? r.json() : null)
-      .then(setProfile)
-      .catch(() => setProfile(null))
-      .finally(() => setLoading(false));
-  }, [username]);
-
-  useEffect(() => {
-    fetch(`${API_URL}/api/developers/${username}/skills`)
-      .then((r) => r.ok ? r.json() : null)
-      .then(setSkills)
-      .catch(() => setSkills(null));
-  }, [username]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="font-mono text-sm text-muted uppercase tracking-widest">Loading...</p>
-      </div>
-    );
+// Skills are a nice-to-have panel: any failure just hides it.
+async function getSkills(username: string): Promise<Skills | null> {
+  try {
+    const res = await fetch(`${API_URL}/api/developers/${encodeURIComponent(username)}/skills`, {
+      next: { revalidate: 60 },
+    });
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
   }
+}
 
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="font-display text-2xl mb-2">Developer not found</p>
-          <Link href="/dev/leaderboard" className="font-mono text-sm text-rust">Back to leaderboard</Link>
-        </div>
-      </div>
-    );
-  }
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ username: string }>;
+}): Promise<Metadata> {
+  const { username } = await params;
+  const profile = await getProfile(username);
+  if (!profile) notFound();
 
-  const avatarNum = (username.split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0) % 8) + 1;
+  const title = `${profile.name} (@${profile.username})`;
+  const description = `${profile.name}'s kodwai profile: AI-agent coding challenges solved, scores and badges.`;
+
+  return {
+    title,
+    description,
+    // Profile indexing is deferred and will be opt-in per developer.
+    robots: { index: false, follow: true },
+    openGraph: { title: `${title} · kodwai`, description, type: "profile", siteName: "kodwai" },
+    twitter: { card: "summary", title: `${title} · kodwai`, description },
+  };
+}
+
+export default async function PublicProfilePage({
+  params,
+}: {
+  params: Promise<{ username: string }>;
+}) {
+  const { username } = await params;
+  const [profile, skills] = await Promise.all([getProfile(username), getSkills(username)]);
+  if (!profile) notFound();
+
+  const avatarNum = (profile.username.split("").reduce((a: number, c: string) => a + c.charCodeAt(0), 0) % 8) + 1;
 
   return (
     <div className="min-h-screen px-4 py-12">
@@ -111,7 +123,7 @@ export default function PublicProfilePage() {
               <img src={`/avatars/avatar-${avatarNum}.png`} alt={profile.name} className="w-full h-full object-cover" />
             </div>
             <div>
-              <p className="font-display text-xl">{profile.name}</p>
+              <h1 className="font-display text-xl">{profile.name}</h1>
               <p className="font-mono text-sm text-muted">@{profile.username}</p>
               {profile.tier && (
                 <div className="mt-1">
@@ -193,19 +205,25 @@ export default function PublicProfilePage() {
           <div className="mb-6">
             <h2 className="font-display text-xl mb-4">Badges</h2>
             <div className="flex flex-wrap gap-3">
-              {profile.badges.map((b: any) => (
-                <div key={b.id} className="flex items-center gap-3 px-4 py-3 border border-rust/20 bg-rust/5">
-                  {BADGE_IMAGES[b.slug] ? (
-                    <img src={BADGE_IMAGES[b.slug]} alt={b.name} className="w-10 h-10 object-contain" />
-                  ) : (
-                    <span className="text-xl">🏅</span>
-                  )}
-                  <div>
-                    <p className="font-display text-sm">{b.name}</p>
-                    <p className="font-mono text-[10px] text-muted">{formatDate(b.earned_at)}</p>
+              {profile.badges.map((b) => {
+                const img = badgeImage(b.slug);
+                return (
+                  <div key={b.id} className="flex items-center gap-3 px-4 py-3 border border-rust/20 bg-rust/5">
+                    {img ? (
+                      <img src={img} alt={b.name} className="w-10 h-10 object-contain" />
+                    ) : (
+                      <span className="text-xl">🏅</span>
+                    )}
+                    <div>
+                      <p className="font-display text-sm">{b.name}</p>
+                      {/* Fixed locale and zone: rendered on the server, so it must not depend on the viewer. */}
+                      <p className="font-mono text-[10px] text-muted">
+                        {formatDateCustom(b.earned_at, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" })}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -214,7 +232,7 @@ export default function PublicProfilePage() {
           <>
             <h2 className="font-display text-xl mb-4">Recent Submissions</h2>
             <div className="space-y-3">
-              {profile.recent_submissions.map((s: any) => (
+              {profile.recent_submissions.map((s) => (
                 <Card key={s.id}>
                   <div className="flex items-center justify-between">
                     <div>

@@ -78,7 +78,7 @@ export default function NewProjectPage() {
               label="Title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Senior Frontend Engineer — React Challenge"
+              placeholder="e.g. Senior Frontend Engineer: React Challenge"
               required
             />
 

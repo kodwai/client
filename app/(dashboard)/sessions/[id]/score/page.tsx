@@ -201,7 +201,7 @@ export default function ScorePage() {
             &larr; Back to Session
           </Link>
           <h1 className="font-display text-2xl sm:text-3xl mt-2">
-            Scores &mdash; {session.candidate_name}
+            Scores: {session.candidate_name}
           </h1>
           <p className="font-mono text-sm text-muted mt-1">
             {session.project_title || session.project_id}

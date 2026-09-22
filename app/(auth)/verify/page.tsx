@@ -1,11 +1,23 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Divider } from "@/components/ui/divider";
 import { Button } from "@/components/ui/button";
+import { ResendVerification } from "@/components/resend-verification";
 import { api } from "@/lib/api";
+
+// Email saved by the signup form so "Resend" works without retyping it.
+function readPendingEmail(): string {
+  try {
+    return sessionStorage.getItem("kodwai_verify_email") ?? "";
+  } catch {
+    return "";
+  }
+}
+
+const noSubscribe = () => () => {};
 
 function VerifyContent() {
   const searchParams = useSearchParams();
@@ -14,6 +26,7 @@ function VerifyContent() {
     token ? "verifying" : "pending"
   );
   const [error, setError] = useState("");
+  const pendingEmail = useSyncExternalStore(noSubscribe, readPendingEmail, () => "");
 
   useEffect(() => {
     if (!token) return;
@@ -61,6 +74,10 @@ function VerifyContent() {
         <h2 className="font-display text-3xl mb-4">Verification failed</h2>
         <Divider className="my-6" />
         <p className="text-rust font-mono text-sm mb-8">{error}</p>
+        <div className="max-w-xs mx-auto mb-8 text-left">
+          <p className="font-mono text-xs text-muted mb-2">Need a fresh link?</p>
+          <ResendVerification email={pendingEmail || undefined} />
+        </div>
         <Link href="/login">
           <Button variant="secondary">Back to login</Button>
         </Link>
@@ -78,6 +95,10 @@ function VerifyContent() {
       <p className="text-muted font-mono text-sm mb-8">
         Click the link in the email to activate your account.
       </p>
+      <div className="max-w-xs mx-auto mb-8">
+        <p className="font-mono text-xs text-muted mb-2">Didn&apos;t get it?</p>
+        <ResendVerification email={pendingEmail || undefined} />
+      </div>
       <Link href="/login">
         <Button variant="secondary">Back to login</Button>
       </Link>

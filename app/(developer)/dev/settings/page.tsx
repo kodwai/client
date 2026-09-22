@@ -362,7 +362,7 @@ export default function DeveloperSettingsPage() {
         <div>
           <h2 className="font-display text-xl">Feedback</h2>
           <p className="font-mono text-xs text-muted mt-1">
-            View your submitted feedback, bug reports, and feature requests — including admin responses.
+            View your submitted feedback, bug reports, and feature requests, including admin responses.
           </p>
         </div>
         <Link href="/dev/settings/feedback">

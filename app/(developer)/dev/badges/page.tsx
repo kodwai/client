@@ -105,26 +105,26 @@ export default function BadgesPage() {
   }
 
   const SHARE_COPY: Record<string, string> = {
-    "first-blood": "Just drew first blood on @kodwai_com. First AI-agent coding challenge complete. The future of coding isn't writing code — it's directing AI to write it for you.",
+    "first-blood": "Just drew first blood on @kodwai_com. First AI-agent coding challenge complete. The future of coding isn't writing code. It's directing AI to write it for you.",
     "five-down": "5 AI-agent coding challenges done on @kodwai_com. Getting better at making AI do the heavy lifting. This is the new meta.",
     "ten-strong": "10 challenges deep on @kodwai_com. If you're not practicing AI-agent coding, you're already behind.",
-    "quarter-century": "25 challenges completed on @kodwai_com. I don't just use AI coding agents — I've mastered them.",
+    "quarter-century": "25 challenges completed on @kodwai_com. I don't just use AI coding agents. I've mastered them.",
     "streak-3": "3-day streak on @kodwai_com. Building the muscle of AI-agent coding, one challenge at a time.",
     "streak-7": "7 days straight solving AI-agent challenges on @kodwai_com. This is what daily practice looks like in 2026.",
     "streak-30": "30-day streak on @kodwai_com. A full month of AI-agent coding challenges without missing a day. Built different.",
     "top-10": "Just cracked the top 10% on @kodwai_com. Competing against other devs on who can wield AI agents best. This is the new leaderboard.",
     "speed-demon": "Finished an AI-agent challenge in under half the time limit on @kodwai_com. Speed + AI = unstoppable.",
     "perfect-score": "95+ on an AI-agent coding challenge on @kodwai_com. Near-perfect execution. The bar is set.",
-    "polyglot": "Completed AI-agent challenges across 3+ categories on @kodwai_com — backend, frontend, algorithms. Full stack AI wielder.",
+    "polyglot": "Completed AI-agent challenges across 3+ categories on @kodwai_com: backend, frontend, algorithms. Full stack AI wielder.",
     "claude-master": "Scored 80+ on 5 challenges using Claude Code on @kodwai_com. If Claude is the tool, I'm the craftsman.",
     "cursor-pro": "Scored 80+ on 5 challenges using Cursor on @kodwai_com. Cursor + me = shipping machine.",
     "codex-pro": "Scored 80+ on 5 challenges using Codex on @kodwai_com. Terminal-native, fully agentic.",
-    "early-adopter": "Early adopter on @kodwai_com — the platform that scores how well you use AI coding agents. The future of technical interviews is here.",
+    "early-adopter": "Early adopter on @kodwai_com, the platform that scores how well you use AI coding agents. The future of technical interviews is here.",
   };
 
   function handleShare(badge: EarnedBadge, platform: "twitter" | "linkedin") {
     const badgeUrl = `${window.location.origin}/badges/${badge.slug}`;
-    const copy = SHARE_COPY[badge.slug] || `I just earned the "${badge.name}" badge on @kodwai_com — ${badge.description}`;
+    const copy = SHARE_COPY[badge.slug] || `I just earned the "${badge.name}" badge on @kodwai_com: ${badge.description}`;
     const hashtags = "kodwai,AIcoding,CodingChallenge";
 
     if (platform === "twitter") {

@@ -121,7 +121,7 @@ function ChallengeFeedbackForm({ challengeId, submissionId }: ChallengeFeedbackF
         />
         <Textarea
           label="Comment"
-          hint="Optional — share what you liked or what could be improved"
+          hint="Optional: share what you liked or what could be improved"
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           rows={3}

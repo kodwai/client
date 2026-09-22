@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, Space_Mono, Playfair_Display } from "next/font/google";
 import Script from "next/script";
+import { APP_URL } from "@/lib/site";
 import "./globals.css";
 
 const GA_MEASUREMENT_ID = "G-M4NC2LHZ5V";
@@ -26,10 +27,17 @@ const spaceMono = Space_Mono({
   display: "swap",
 });
 
+const DEFAULT_TITLE = "kodwai · AI-Agent Coding Challenges";
+const DEFAULT_DESCRIPTION =
+  "Real coding challenges you solve with your own AI agent. kodwai scores how well you direct it: Direction, Outcome, Lift.";
+
 export const metadata: Metadata = {
-  title: "kodwai — AI-Agent Coding Challenges",
-  description:
-    "Prove your AI-agent coding skills. Solve challenges on your own machine with Claude Code, Cursor, Codex, or any AI agent. Get scored, compete on leaderboards, build your profile.",
+  metadataBase: new URL(APP_URL),
+  title: {
+    default: DEFAULT_TITLE,
+    template: "%s | kodwai",
+  },
+  description: DEFAULT_DESCRIPTION,
   keywords: [
     "AI coding challenges",
     "Claude Code",
@@ -46,17 +54,15 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
-    title: "kodwai — AI-Agent Coding Challenges",
-    description:
-      "Solve AI-agent coding challenges on your own machine with Claude Code, Cursor, Codex, and more. Compete on leaderboards. Earn badges.",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
     type: "website",
     siteName: "kodwai",
   },
   twitter: {
     card: "summary_large_image",
-    title: "kodwai — AI-Agent Coding Challenges",
-    description:
-      "Prove your AI-agent coding skills. Challenges, leaderboards, badges. The platform where developers compete on how well they wield AI.",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
   },
 };
 
